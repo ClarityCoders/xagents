@@ -6,6 +6,8 @@
   performant reinforcement learning algorithms in tf2</h3>
   </p>
 
+![pong](/gifs/pong.gif)
+
 * [Installation](#installation)
 * [Description](#description)
 * [Features](#features)
@@ -101,7 +103,7 @@ All agents are available through the command line.
 all models passed to agents in code, should be loaded with weights 
 beforehand, if called for resuming training or playing.
 
-###**Training**
+### **Training**
 
 **Through command line**
 
@@ -127,7 +129,7 @@ Then either `max_steps` or `target_reward` should be specified to start training
     
     agent.fit(target_reward=19)
 
-###**Playing**
+### **Playing**
 
 **Through command line**
 

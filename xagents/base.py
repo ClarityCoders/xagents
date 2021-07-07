@@ -550,6 +550,7 @@ class BaseAgent(ABC):
         frame_delay=0.0,
         max_steps=None,
         action_idx=0,
+        frame_frequency=1,
     ):
         """
         Play and display a game.
@@ -560,6 +561,7 @@ class BaseAgent(ABC):
             frame_delay: Delay between rendered frames.
             max_steps: Maximum environment steps.
             action_idx: Index of action output by self.model
+            frame_frequency: If frame_dir is specified, save frames every n frames.
 
         Returns:
             None
@@ -580,8 +582,11 @@ class BaseAgent(ABC):
                 break
             if render:
                 env_in_use.render()
-            if frame_dir:
-                frame = env_in_use.render(mode='rgb_array')
+                sleep(frame_delay)
+            if frame_dir and steps % frame_frequency == 0:
+                frame = cv2.cvtColor(
+                    env_in_use.render(mode='rgb_array'), cv2.COLOR_BGR2RGB
+                )
                 cv2.imwrite(os.path.join(frame_dir, f'{steps:05d}.jpg'), frame)
             if hasattr(self, 'actor') and agent_id in ['td3', 'ddpg']:
                 action = self.actor(self.get_model_inputs(self.get_states()))[env_idx]
@@ -592,7 +597,6 @@ class BaseAgent(ABC):
             self.states[env_idx], reward, done, _ = env_in_use.step(action)
             if done:
                 break
-            sleep(frame_delay)
             steps += 1
 
 

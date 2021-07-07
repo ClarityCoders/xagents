@@ -134,4 +134,9 @@ play_args = {
         'type': int,
         'default': 0,
     },
+    'frame-frequency': {
+        'help': 'If --frame-dir is specified, save frames every n frames.',
+        'type': int,
+        'default': 1
+    },
 }
