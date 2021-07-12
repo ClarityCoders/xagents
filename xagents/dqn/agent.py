@@ -67,7 +67,6 @@ class DQN(OffPolicy):
         """
         return tf.concat((batch_indices, tf.cast(actions[:, tf.newaxis], tf.int64)), -1)
 
-    @tf.function
     def get_model_outputs(self, inputs, models, training=True):
         """
         Get inputs and apply normalization if `scale_inputs` was specified earlier,

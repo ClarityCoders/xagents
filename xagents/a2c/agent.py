@@ -58,7 +58,6 @@ class A2C(OnPolicy):
             return Categorical(probs=actor_output)
         return Categorical(logits=actor_output)
 
-    @tf.function
     def get_model_outputs(self, inputs, models, training=True, actions=None):
         """
         Get actor and critic outputs, and determine actions sampled from

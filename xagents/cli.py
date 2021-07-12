@@ -359,7 +359,7 @@ class Executor:
             n_models = len(self.agent.output_models)
             assert (
                 n_weights == n_models
-            ), f'Expected {n_models} weights to load, got {n_weights} weights to load.'
+            ), f'Expected {n_models} weights to load, got {n_weights}'
             for weight, model in zip(non_agent_known.weights, self.agent.output_models):
                 model.load_weights(weight).expect_partial()
         getattr(self.agent, xagents.commands[self.command][1])(**command_known)

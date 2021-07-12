@@ -6,8 +6,6 @@
   performant reinforcement learning algorithms in tf2</h3>
   </p>
 
-![pong](/gifs/pong.gif)
-
 * [Installation](#installation)
 * [Description](#description)
 * [Features](#features)
@@ -26,6 +24,11 @@
 * [License](#license)
 * [Show your support](#show-your-support)
 * [Contact](#contact)
+
+![pong](/gifs/pong.gif)
+
+![bipedal-walker](/gifs/bipedal-walker.gif)
+
 
 ### **Installation**
 ___
@@ -226,6 +229,9 @@ which should list command + agent options combined
 
 **General notes**
 
+* All the default hyperparameters don't work for all environments.
+  Which means you either need to tune them according to the given environment,
+  or pass previously tuned ones, in order to get good results.
 * `--model <model.cfg>` or `--actor-model <actor.cfg>` and `--critic-model <critic.cfg>` are optional 
   which means, if not specified, the default model(s) will be loaded, so you don't have to worry about it.
 * You can also use external models by passing them to agent constructor. If you do, you will have to ensure

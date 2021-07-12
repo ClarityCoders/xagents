@@ -1,5 +1,5 @@
 tensorflow_probability==0.13.0
-opencv_python_headless==4.5.2.54
+opencv_python_headless==4.5.3.56
 tensorflow_addons==0.13.0
 numpy==1.19.5
 pandas==1.3.0
