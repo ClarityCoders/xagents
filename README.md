@@ -26,6 +26,7 @@
 * [Contact](#contact)
 
 ![pong](/gifs/pong.gif)
+![breakout](/gifs/breakout.gif)
 
 ![bipedal-walker](/gifs/bipedal-walker.gif)
 
@@ -54,7 +55,7 @@ be automatically installed but will require an additional step ...
     sudo apt-get install -y xvfb
     ```
     
-3. **Verify installation**
+**Verify installation**
 
 ```sh
 xagents

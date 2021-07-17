@@ -101,7 +101,6 @@ agent_args = {
     'divergence-monitoring-steps': {
         'help': 'Steps after which, plateau and early stopping are active',
         'type': int,
-        'default': 500000,
     },
 }
 
@@ -137,6 +136,6 @@ play_args = {
     'frame-frequency': {
         'help': 'If --frame-dir is specified, save frames every n frames.',
         'type': int,
-        'default': 1
+        'default': 1,
     },
 }

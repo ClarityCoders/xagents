@@ -35,7 +35,7 @@ class BaseAgent(ABC):
         plateau_reduce_factor=0.9,
         plateau_reduce_patience=10,
         early_stop_patience=3,
-        divergence_monitoring_steps=500000,
+        divergence_monitoring_steps=None,
     ):
         """
         Base class for various types of agents.
@@ -102,7 +102,7 @@ class BaseAgent(ABC):
         self.last_reset_time = None
         self.games = 0
         self.episode_rewards = np.zeros(self.n_envs)
-        self.done_envs = []
+        self.done_envs = 0
         self.supported_action_spaces = Box, Discrete
         if seed:
             self.set_seeds(seed)
@@ -226,7 +226,8 @@ class BaseAgent(ABC):
         """
         self.checkpoint()
         if (
-            self.steps >= self.divergence_monitoring_steps
+            self.divergence_monitoring_steps
+            and self.steps >= self.divergence_monitoring_steps
             and self.mean_reward <= self.best_reward
         ):
             self.plateau_count += 1
@@ -254,11 +255,11 @@ class BaseAgent(ABC):
         Returns:
             None
         """
-        if len(self.done_envs) >= self.log_frequency:
+        if self.done_envs >= self.log_frequency:
             self.update_metrics()
             self.last_reset_time = perf_counter()
             self.display_metrics()
-            self.done_envs.clear()
+            self.done_envs = 0
 
     def training_done(self):
         """
@@ -354,7 +355,7 @@ class BaseAgent(ABC):
             if done:
                 if self.history_checkpoint:
                     self.update_history(self.episode_rewards[i])
-                self.done_envs.append(1)
+                self.done_envs += 1
                 self.total_rewards.append(self.episode_rewards[i])
                 self.games += 1
                 self.episode_rewards[i] = 0

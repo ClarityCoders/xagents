@@ -413,6 +413,7 @@ class TestBase:
         agent.best_reward = best_reward
         agent.plateau_count = plateau_count
         agent.early_stop_count = early_stop_count
+        agent.divergence_monitoring_steps = 500000
         for model in agent.output_models:
             model.optimizer.learning_rate.assign(learning_rate)
         agent.update_metrics()
@@ -449,7 +450,7 @@ class TestBase:
         agent.last_reset_time = perf_counter()
         agent.check_episodes()
         assert not capsys.readouterr().out
-        agent.done_envs.extend(len(self.envs) * [1])
+        agent.done_envs += len(self.envs)
         agent.check_episodes()
         self.assert_progress_displayed(capsys.readouterr().out)
         assert not agent.done_envs
