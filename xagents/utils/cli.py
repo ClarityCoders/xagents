@@ -1,6 +1,11 @@
 non_agent_args = {
     'env': {'help': 'gym environment id', 'required': True},
-    'n-envs': {'help': 'Number of environments to create', 'default': 1, 'type': int},
+    'n-envs': {
+        'help': 'Number of environments to create',
+        'default': 1,
+        'type': int,
+        'hp_type': 'categorical',
+    },
     'preprocess': {
         'help': 'If specified, states will be treated as atari frames\n'
         'and preprocessed accordingly',
@@ -14,21 +19,25 @@ non_agent_args = {
         'help': 'Learning rate passed to a tensorflow.keras.optimizers.Optimizer',
         'type': float,
         'default': 7e-4,
+        'hp_type': 'log_uniform',
     },
     'opt-epsilon': {
         'help': 'Epsilon passed to a tensorflow.keras.optimizers.Optimizer',
         'type': float,
         'default': 1e-7,
+        'hp_type': 'log_uniform',
     },
     'beta1': {
         'help': 'Beta1 passed to a tensorflow.keras.optimizers.Optimizer',
         'type': float,
         'default': 0.9,
+        'hp_type': 'log_uniform',
     },
     'beta2': {
         'help': 'Beta2 passed to a tensorflow.keras.optimizers.Optimizer',
         'type': float,
         'default': 0.999,
+        'hp_type': 'log_uniform',
     },
     'weights': {
         'help': 'Path(s) to model(s) weight(s) to be loaded by agent output_models',
@@ -37,6 +46,7 @@ non_agent_args = {
     'max-frame': {
         'help': 'If specified, max & skip will be applied during preprocessing',
         'action': 'store_true',
+        'hp_type': 'categorical',
     },
 }
 
@@ -45,17 +55,24 @@ off_policy_args = {
         'help': 'Maximum replay buffer size',
         'type': int,
         'default': 10000,
+        'hp_type': 'int',
     },
-    'buffer-initial-size': {'help': 'Replay buffer initial size', 'type': int},
+    'buffer-initial-size': {
+        'help': 'Replay buffer initial size',
+        'type': int,
+        'hp_type': 'int',
+    },
     'buffer-batch-size': {
         'help': 'Replay buffer batch size',
         'type': int,
         'default': 32,
+        'hp_type': 'categorical',
     },
     'buffer-n-steps': {
         'help': 'Replay buffer transition step',
         'type': int,
         'default': 1,
+        'hp_type': 'categorical',
     },
 }
 
@@ -66,7 +83,12 @@ agent_args = {
         'default': 100,
         'type': int,
     },
-    'gamma': {'help': 'Discount factor', 'default': 0.99, 'type': float},
+    'gamma': {
+        'help': 'Discount factor',
+        'default': 0.99,
+        'type': float,
+        'hp_type': 'log_uniform',
+    },
     'display-precision': {
         'help': 'Number of decimals to be displayed',
         'default': 2,

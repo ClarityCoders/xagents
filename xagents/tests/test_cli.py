@@ -133,9 +133,8 @@ class TestExecutor:
         Args:
             capsys: _pytest.capture.CaptureFixture
         """
-        with pytest.raises(AssertionError) as pe:
+        with pytest.raises(AssertionError, match=r'Invalid command'):
             self.executor.maybe_create_agent(['invalid'])
-        assert 'Invalid command' in pe.value.args[0]
 
     def test_maybe_create_agent_command_agent(self, command, agent_id, capsys):
         """
@@ -182,6 +181,9 @@ class TestExecutor:
         if command == 'train':
             argv.extend(['--target-reward', '18'])
         agent_args, non_agent_args, command_args = self.executor.parse_known_args(argv)
+        unknown_argv = argv + ['--unknown-flag', 'unknown-value']
+        with pytest.warns(UserWarning, match=r'Got unknown'):
+            self.executor.parse_known_args(unknown_argv)
         actual = {**vars(agent_args), **vars(non_agent_args), **vars(command_args)}
         assert set(get_expected_flags(argv, True)) == set(actual.keys())
 

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -167,9 +168,16 @@ class Executor:
         ):
             self.add_args(off_policy_args, general_parser)
         self.add_args(non_agent_args, general_parser)
-        non_agent_known = general_parser.parse_known_args(argv)[0]
-        agent_known = agent_parser.parse_known_args(argv)[0]
-        command_known = command_parser.parse_known_args(argv)[0]
+        non_agent_known, extra1 = general_parser.parse_known_args(argv)
+        agent_known, extra2 = agent_parser.parse_known_args(argv)
+        command_known, extra3 = command_parser.parse_known_args(argv)
+        unknown_flags = [
+            unknown_flag
+            for unknown_flag in set(extra1) & set(extra2) & set(extra3)
+            if unknown_flag not in [self.command, self.agent_id]
+        ]
+        if unknown_flags:
+            warnings.warn(f'Got unknown flags {unknown_flags}')
         if (
             self.command == 'train'
             and command_known.target_reward is None

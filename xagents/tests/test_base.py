@@ -127,10 +127,9 @@ class TestBase:
         Args:
             agent: OnPolicy/OffPolicy subclass.
         """
-        with pytest.raises(AssertionError) as pe:
+        with pytest.raises(AssertionError, match=r'No environments given'):
             agent_kwargs = self.get_agent_kwargs(agent, [])
             agent(**agent_kwargs)
-        assert pe.value.args[0] == 'No environments given'
 
     def test_seeds(self, agent):
         """
@@ -186,13 +185,12 @@ class TestBase:
         Args:
             agent: OnPolicy/OffPolicy subclass.
         """
-        with pytest.raises(AssertionError) as pe:
+        with pytest.raises(AssertionError, match=r'Expected one of'):
             agent(
                 **self.get_agent_kwargs(
                     agent, [gym.make('RepeatCopy-v0') for _ in range(len(self.envs))]
                 )
             )
-        assert 'Expected one of' in pe.value.args[0]
 
     def test_init_from_checkpoint(self, agent, tmp_path):
         """
@@ -216,9 +214,8 @@ class TestBase:
         agent = agent(
             **self.get_agent_kwargs(agent), history_checkpoint=invalid_checkpoint
         )
-        with pytest.raises(AssertionError) as pe:
+        with pytest.raises(AssertionError, match=r'Expected the following columns'):
             agent.init_from_checkpoint()
-        assert 'Expected the following columns' in pe.value.args[0]
         history_size = 10
         valid_history = []
         agent.history_checkpoint = valid_checkpoint = (
@@ -325,9 +322,8 @@ class TestBase:
             **self.get_agent_kwargs(agent),
             checkpoints=(self.model_counts[agent] + 1) * ['wrong_ckpt.tf'],
         )
-        with pytest.raises(AssertionError) as pe:
+        with pytest.raises(AssertionError, match=r'given output models, got'):
             agent.fit(18)
-        assert 'given output models, got' in pe.value.args[0]
 
     @staticmethod
     def assert_progress_displayed(displayed):
@@ -517,9 +513,8 @@ class TestBase:
         agent = off_policy_agent(
             **self.get_agent_kwargs(off_policy_agent, buffers=buffers)
         )
-        with pytest.raises(ValueError) as pe:
+        with pytest.raises(ValueError, match=r'Sample larger than population'):
             agent.concat_buffer_samples()
-        assert 'Sample larger than population' in pe.value.args[0]
         seen = []
         agent.np_batch_dtypes = [np.float64, np.float16, np.float32, np.int16, np.int32]
         for i, buffer in enumerate(agent.buffers):
@@ -601,9 +596,8 @@ class TestBase:
             base_agent: A base agent class.
         """
         agent = base_agent(**self.get_agent_kwargs(base_agent))
-        with pytest.raises(NotImplementedError) as pe:
+        with pytest.raises(NotImplementedError, match=r'should be implemented by'):
             agent.train_step()
-        assert 'train_step() should be implemented by' in pe.value.args[0]
 
     def test_get_model_inputs(self, agent):
         """

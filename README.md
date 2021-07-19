@@ -427,7 +427,7 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
 
 **Command line**
 
-    xagents train dqn --env PongNoFrameskip-v4 --target-reward 19 --n-envs 3 --lr 1e-4 --preprocess --checkpoints dqn-pong.tf --epsilon-start 0.02 --scale-inputs --no-env-scale --buffer-max-size 50000 --buffer-initial-size 10000 --max-frame
+    xagents train dqn --env PongNoFrameskip-v4 --target-reward 19 --n-envs 3 --lr 1e-4 --preprocess --checkpoints dqn-pong.tf --scale-inputs --no-env-scale --buffer-max-size 50000 --buffer-initial-size 10000 --max-frame
 
 **Non-command line**
 

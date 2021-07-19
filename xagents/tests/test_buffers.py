@@ -53,12 +53,10 @@ class TestBaseBuffer:
 
     def test_abstract_methods(self):
         buffer = BaseBuffer(32)
-        with pytest.raises(NotImplementedError) as pe1:
+        with pytest.raises(NotImplementedError, match=r'should be implemented'):
             buffer.append(1)
-        with pytest.raises(NotImplementedError) as pe2:
+        with pytest.raises(NotImplementedError, match=r'should be implemented'):
             buffer.get_sample()
-        for info in (pe1, pe2):
-            assert 'should be implemented' in info.value.args[0]
 
 
 @pytest.mark.usefixtures('buffer1', 'observations')

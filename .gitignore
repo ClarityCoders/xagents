@@ -9,3 +9,4 @@ openaigym*
 *scratch*
 *.npy
 *.parquet
+*.db
