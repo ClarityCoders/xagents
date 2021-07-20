@@ -13,7 +13,8 @@ import xagents
 from xagents import A2C, ACER, DDPG, DQN, PPO, TD3, TRPO
 from xagents.base import BaseAgent, OffPolicy, OnPolicy
 from xagents.utils.buffers import ReplayBuffer1
-from xagents.utils.common import get_wandb_key, write_from_dict
+from xagents.utils.common import (create_buffers, create_models, get_wandb_key,
+                                  write_from_dict)
 
 
 class DummyAgent(BaseAgent):
@@ -62,7 +63,7 @@ class DummyAgent(BaseAgent):
         print(f'step ending')
 
 
-@pytest.mark.usefixtures('envs', 'envs2', 'model', 'buffers', 'executor')
+@pytest.mark.usefixtures('envs', 'envs2', 'model', 'buffers')
 class TestBase:
     """
     Tests for base agents and their methods.
@@ -649,39 +650,14 @@ class TestBase:
         """
         agent_kwargs = {}
         agent_id = agent.__module__.split('.')[1]
-        envs = agent_kwargs['envs'] = (
-            self.envs if agent_id not in ['td3', 'ddpg'] else self.envs2
-        )
-        self.executor.agent_id = agent_id
-        self.executor.command = 'play'
-        agent_args, non_agent_args, command_args = self.executor.parse_known_args(
-            [
-                'play',
-                agent_id,
-                '--env',
-                envs[0].spec.id,
-                '--buffer-batch-size',
-                '1000',
-                '--n-envs',
-                f'{len(self.envs)}',
-            ]
-        )
-        agent_args, command_args = vars(agent_args), vars(command_args)
-        agent_args['envs'] = envs
-        models = self.executor.create_models(
-            agent_args,
-            non_agent_args,
-            envs,
-        )
+        envs = self.envs if agent_id not in ['td3', 'ddpg'] else self.envs2
+        agent_kwargs['envs'] = envs
+        models = create_models(xagents.agents[agent_id], envs[0], agent_id)
+        agent_kwargs.update(models)
         if issubclass(agent, OffPolicy) or agent == ACER:
-            agent_kwargs['buffers'] = self.executor.create_buffers(
-                agent_args, non_agent_args
+            agent_kwargs['buffers'] = create_buffers(
+                agent_id, 1000, 32, len(envs), 0.99
             )
-        if len(models) == 1:
-            agent_kwargs['model'] = models[0]
-        else:
-            agent_kwargs['actor_model'] = models[0]
-            agent_kwargs['critic_model'] = models[1]
         agent = agent(**agent_kwargs)
         video_dir = tmp_path / agent_id / 'video'
         frame_dir = tmp_path / agent_id / 'frames'

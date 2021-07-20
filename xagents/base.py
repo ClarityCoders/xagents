@@ -36,6 +36,8 @@ class BaseAgent(ABC):
         plateau_reduce_patience=10,
         early_stop_patience=3,
         divergence_monitoring_steps=None,
+        quiet=False,
+        trial=None,
     ):
         """
         Base class for various types of agents.
@@ -85,6 +87,9 @@ class BaseAgent(ABC):
         self.plateau_reduce_patience = plateau_reduce_patience
         self.early_stop_patience = early_stop_patience
         self.divergence_monitoring_steps = divergence_monitoring_steps
+        self.quiet = quiet
+        self.trial = trial
+        self.reported_rewards = 0
         self.plateau_count = 0
         self.early_stop_count = 0
         self.target_reward = None
@@ -108,6 +113,10 @@ class BaseAgent(ABC):
             self.set_seeds(seed)
         self.reset_envs()
         self.set_action_count()
+
+    def display_message(self, *args, **kwargs):
+        if not self.quiet:
+            print(*args, **kwargs)
 
     def set_seeds(self, seed):
         """
@@ -174,7 +183,12 @@ class BaseAgent(ABC):
         if self.mean_reward > self.best_reward:
             self.plateau_count = 0
             self.early_stop_count = 0
-            print(f'Best reward updated: {self.best_reward} -> {self.mean_reward}')
+            if self.trial:
+                self.trial.report(np.mean(self.total_rewards), self.reported_rewards)
+                self.reported_rewards += 1
+            self.display_message(
+                f'Best reward updated: {self.best_reward} -> {self.mean_reward}'
+            )
             if self.checkpoints:
                 for model, checkpoint in zip(self.output_models, self.checkpoints):
                     model.save_weights(checkpoint)
@@ -213,7 +227,7 @@ class BaseAgent(ABC):
         display = (
             f'{title}: {value}' for title, value in zip(display_titles, display_values)
         )
-        print(', '.join(display))
+        self.display_message(', '.join(display))
 
     def update_metrics(self):
         """
@@ -236,7 +250,9 @@ class BaseAgent(ABC):
             for model in self.output_models:
                 current_lr = model.optimizer.learning_rate
                 new_lr = current_lr * self.plateau_reduce_factor
-            print(f'Learning rate reduced {current_lr.numpy()} ' f'-> {new_lr.numpy()}')
+            self.display_message(
+                f'Learning rate reduced {current_lr.numpy()} ' f'-> {new_lr.numpy()}'
+            )
             current_lr.assign(new_lr)
             self.plateau_count = 0
             self.early_stop_count += 1
@@ -269,13 +285,13 @@ class BaseAgent(ABC):
             bool
         """
         if self.early_stop_count >= self.early_stop_patience:
-            print(f'Early stopping')
+            self.display_message(f'Early stopping')
             return True
         if self.target_reward and self.mean_reward >= self.target_reward:
-            print(f'Reward achieved in {self.steps} steps')
+            self.display_message(f'Reward achieved in {self.steps} steps')
             return True
         if self.max_steps and self.steps >= self.max_steps:
-            print(f'Maximum steps exceeded')
+            self.display_message(f'Maximum steps exceeded')
             return True
         return False
 
@@ -579,7 +595,7 @@ class BaseAgent(ABC):
             os.makedirs(dir_name or '.', exist_ok=True)
         while True:
             if max_steps and steps >= max_steps:
-                print(f'Maximum steps {max_steps} exceeded')
+                self.display_message(f'Maximum steps {max_steps} exceeded')
                 break
             if render:
                 env_in_use.render()
@@ -669,12 +685,12 @@ class OffPolicy(BaseAgent, ABC):
                 sizes[i] = buffer.current_size
                 filled = sum(sizes.values())
                 complete = round((filled / total_size) * 100, self.display_precision)
-                print(
+                self.display_message(
                     f'\rFilling replay buffer {i + 1}/{self.n_envs} ==> {complete}% | '
                     f'{filled}/{total_size}',
                     end='',
                 )
-        print()
+        self.display_message('')
         self.reset_envs()
 
     def fit(

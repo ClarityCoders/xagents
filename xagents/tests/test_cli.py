@@ -8,6 +8,7 @@ from gym.spaces import Discrete
 
 import xagents
 from xagents.tests.utils import assert_flags_displayed, get_expected_flags
+from xagents.utils.common import create_model
 
 
 @pytest.mark.usefixtures('executor', 'envs', 'envs2')
@@ -193,22 +194,7 @@ class TestExecutor:
         Args:
             agent_id: One of the agent ids available in xagents.agents
         """
-        self.executor.command = 'train'
-        self.executor.agent_id = agent_id
-        argv = [
-            self.executor.command,
-            agent_id,
-            '--env',
-            'test-env',
-            '--target-reward',
-            '18',
-        ]
-        agent_args, non_agent_args, _ = self.executor.parse_known_args(argv)
-        agent_args = vars(agent_args)
-        envs = (
-            self.envs if self.executor.agent_id not in ['td3', 'ddpg'] else self.envs2
-        )
-        agent_args['envs'] = envs
+        envs = self.envs if agent_id not in ['td3', 'ddpg'] else self.envs2
         expected_units = [
             envs[0].action_space.n
             if isinstance(envs[0].action_space, Discrete)
@@ -219,12 +205,10 @@ class TestExecutor:
         elif agent_id != 'dqn':
             expected_units.append(1)
         actual_units = []
-        for model_arg in ['model', 'actor_model', 'critic_model']:
-            if model_arg in agent_args:
-                model = self.executor.create_model(
-                    envs, agent_args, non_agent_args, model_arg
-                )
-                total_units = 2 if model_arg == 'model' and agent_id != 'dqn' else 1
+        for model_type in ['model', 'actor_model', 'critic_model']:
+            if model_type in xagents.agents[agent_id]:
+                model = create_model(envs[0], agent_id, model_type)
+                total_units = 2 if model_type == 'model' and agent_id != 'dqn' else 1
                 output_units = [
                     layer.units
                     for layer in model.layers

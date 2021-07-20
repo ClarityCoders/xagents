@@ -124,6 +124,10 @@ agent_args = {
         'help': 'Steps after which, plateau and early stopping are active',
         'type': int,
     },
+    'quiet': {
+        'help': 'If specified, further actions will be non-verbose',
+        'action': 'store_true',
+    },
 }
 
 train_args = {
@@ -160,4 +164,12 @@ play_args = {
         'type': int,
         'default': 1,
     },
+}
+
+tune_args = {
+    'trial-steps': {'help': 'Maximum steps for a trial', 'type': int},
+    'n-trials': {'help': 'Number of trials to run', 'type': int},
+    'study': {'help': 'Name of optuna study'},
+    'storage': {'help': 'Database url'},
+    'n-jobs': {'help': 'Parallel trials', 'type': int, 'default': 1},
 }

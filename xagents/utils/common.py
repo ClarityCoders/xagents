@@ -10,10 +10,15 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+from gym.spaces import Discrete
 from matplotlib import pyplot as plt
 from tensorflow.keras.initializers import GlorotUniform, Orthogonal
 from tensorflow.keras.layers import Conv2D, Dense, Flatten, Input
 from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+
+import xagents
+from xagents.utils.buffers import ReplayBuffer1, ReplayBuffer2
 
 
 class AtariWrapper(gym.Wrapper):
@@ -375,3 +380,100 @@ def write_from_dict(_dict, path):
     """
     table = pa.Table.from_pydict(_dict)
     pq.write_to_dataset(table, root_path=path, compression='gzip')
+
+
+def create_model(
+    env, agent_id, model_type, optimizer_kwargs=None, seed=None, model_cfg=None
+):
+    units = [
+        env.action_space.n
+        if isinstance(env.action_space, Discrete)
+        else env.action_space.shape[0]
+    ]
+    if len(env.observation_space.shape) == 3:
+        network_type = 'cnn'
+    else:
+        network_type = 'ann'
+    try:
+        model_cfg = model_cfg or xagents.agents[agent_id][model_type][network_type][0]
+    except IndexError:
+        model_cfg = None
+    models_folder = Path(xagents.agents[agent_id]['module'].__file__).parent / 'models'
+    assert model_cfg, (
+        f'You should specify `model_cfg`. No default '
+        f'{network_type.upper()} model found in\n{models_folder}'
+    )
+    if agent_id == 'acer':
+        units.append(units[-1])
+    elif 'actor' in model_cfg and 'critic' in model_cfg:
+        units.append(1)
+    elif 'critic' in model_cfg:
+        units[0] = 1
+    optimizer_kwargs = optimizer_kwargs or {}
+    model_reader = ModelReader(
+        model_cfg,
+        units,
+        env.observation_space.shape,
+        Adam(**optimizer_kwargs),
+        seed,
+    )
+    if agent_id in ['td3', 'ddpg'] and 'critic' in model_cfg:
+        model_reader.input_shape = (
+            model_reader.input_shape[0] + env.action_space.shape[0]
+        )
+    return model_reader.build_model()
+
+
+def create_models(options, env, agent_id, **kwargs):
+    model_types = ['model', 'actor_model', 'critic_model']
+    models = {}
+    for model_type in model_types:
+        if model_type in options:
+            model_cfg = options[model_type]
+            if not isinstance(model_cfg, (str, Path)):
+                model_cfg = None
+            models[model_type] = create_model(
+                env, agent_id, model_type, model_cfg=model_cfg, **kwargs
+            )
+    return models
+
+
+def create_buffers(
+    agent_id,
+    max_size,
+    batch_size,
+    n_envs,
+    gamma,
+    n_steps=1,
+    initial_size=None,
+    as_total=True,
+):
+    initial_size = initial_size or max_size
+    if as_total:
+        max_size //= n_envs
+        initial_size //= n_envs
+        batch_size //= n_envs
+    if agent_id == 'acer':
+        batch_size = 1
+    if agent_id in ['td3', 'ddpg']:
+        buffers = [
+            ReplayBuffer2(
+                max_size,
+                5,
+                initial_size=initial_size,
+                batch_size=batch_size,
+            )
+            for _ in range(n_envs)
+        ]
+    else:
+        buffers = [
+            ReplayBuffer1(
+                max_size,
+                n_steps,
+                gamma,
+                initial_size=initial_size,
+                batch_size=batch_size,
+            )
+            for _ in range(n_envs)
+        ]
+    return buffers

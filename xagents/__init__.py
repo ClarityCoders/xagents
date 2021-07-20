@@ -6,7 +6,7 @@ from xagents.dqn.agent import DQN
 from xagents.ppo.agent import PPO
 from xagents.td3.agent import TD3
 from xagents.trpo.agent import TRPO
-from xagents.utils.cli import play_args, train_args
+from xagents.utils.cli import play_args, train_args, tune_args
 from xagents.utils.common import register_models
 
 __author__ = 'Emad Boctor'
@@ -30,5 +30,10 @@ commands = {
         play_args,
         'play',
         'Play a game given a trained agent and environment',
+    ),
+    'tune': (
+        tune_args,
+        '',
+        'Tune hyper parameters given an agent, hyper parameter specs, and environment',
     ),
 }
