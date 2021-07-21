@@ -37,6 +37,9 @@ class PPO(A2C):
         self.clip_norm = clip_norm
         self.batch_size = self.n_envs * self.n_steps
         self.mini_batch_size = self.batch_size // self.mini_batches
+        assert (
+            self.mini_batch_size > 0
+        ), f'Invalid batch size to mini-batch size ratio {self.batch_size}: {self.mini_batches}'
 
     def calculate_returns(
         self,

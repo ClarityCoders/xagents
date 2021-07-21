@@ -87,6 +87,7 @@ selection of algorithms can be used directly or through command line.
 * wandb support.
 * Multiple environments (All agents).
 * Command line options.
+* Hyperparameter auto-tuning.
 * Early stopping, reduce on plateau.
 * Resume training and update metrics from last checkpoint.
 * Discrete and continuous action spaces.

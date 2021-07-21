@@ -7,7 +7,8 @@ import pandas as pd
 import xagents
 from xagents.base import OffPolicy
 from xagents.utils.cli import agent_args, non_agent_args, off_policy_args
-from xagents.utils.common import create_buffers, create_envs, create_models
+from xagents.utils.common import create_agent
+from xagents.utils.tuning import run_tuning
 
 
 class Executor:
@@ -147,7 +148,7 @@ class Executor:
             return
         self.command, self.agent_id = command, agent_id
 
-    def parse_all_groups(self, argv, tuning):
+    def parse_known_args(self, argv, tuning=False):
         general_parser = argparse.ArgumentParser()
         agent_parser = argparse.ArgumentParser()
         command_parser = argparse.ArgumentParser()
@@ -173,20 +174,6 @@ class Executor:
         ]
         if unknown_flags:
             warnings.warn(f'Got unknown flags {unknown_flags}')
-        return non_agent_known, agent_known, command_known
-
-    def parse_known_args(self, argv, tuning=False):
-        """
-        Parse general, agent and command specific args.
-        Args:
-            argv: Arguments passed through sys.argv or otherwise.
-
-        Returns:
-            agent kwargs, non-agent kwargs and command kwargs.
-        """
-        non_agent_known, agent_known, command_known = self.parse_all_groups(
-            argv, tuning
-        )
         if self.command == 'train':
             assert (
                 command_known.target_reward or command_known.max_steps
@@ -207,58 +194,19 @@ class Executor:
         if not self.agent_id:
             return
         if self.command == 'tune':
-            arg_groups = self.parse_all_groups(argv, True)
-            return
-        agent_known, non_agent_known, command_known = self.parse_known_args(
-            argv,
-        )
-        agent_known = vars(agent_known)
-        envs = create_envs(
-            non_agent_known.env,
-            non_agent_known.n_envs,
-            non_agent_known.preprocess,
-            scale_frames=not non_agent_known.no_env_scale,
-            max_frame=non_agent_known.max_frame,
-        )
-        agent_known['envs'] = envs
-        optimizer_kwargs = {
-            'learning_rate': non_agent_known.lr,
-            'beta_1': non_agent_known.beta1,
-            'beta_2': non_agent_known.beta2,
-            'epsilon': non_agent_known.opt_epsilon,
-        }
-        models = create_models(
-            agent_known,
-            envs[0],
-            self.agent_id,
-            optimizer_kwargs=optimizer_kwargs,
-            seed=agent_known['seed'],
-        )
-        agent_known.update(models)
-        if (
-            issubclass(xagents.agents[self.agent_id]['agent'], OffPolicy)
-            or self.agent_id == 'acer'
-        ):
-            buffers = create_buffers(
-                self.agent_id,
-                non_agent_known.buffer_max_size,
-                non_agent_known.buffer_batch_size,
-                non_agent_known.n_envs,
-                agent_known['gamma'],
-                non_agent_known.buffer_n_steps,
-                non_agent_known.buffer_initial_size,
+            agent_known, non_agent_known, command_known = self.parse_known_args(
+                argv, True
             )
-            agent_known['buffers'] = buffers
-        self.agent = xagents.agents[self.agent_id]['agent'](**agent_known)
-        if non_agent_known.weights:
-            n_weights = len(non_agent_known.weights)
-            n_models = len(self.agent.output_models)
-            assert (
-                n_weights == n_models
-            ), f'Expected {n_models} weights to load, got {n_weights}'
-            for weight, model in zip(non_agent_known.weights, self.agent.output_models):
-                model.load_weights(weight).expect_partial()
-        getattr(self.agent, xagents.commands[self.command][1])(**vars(command_known))
+            run_tuning(self.agent_id, agent_known, non_agent_known, command_known)
+        else:
+            agent_known, non_agent_known, command_known = self.parse_known_args(
+                argv,
+            )
+            agent_known = vars(agent_known)
+            self.agent = create_agent(self.agent_id, agent_known, non_agent_known)
+            getattr(self.agent, xagents.commands[self.command][1])(
+                **vars(command_known)
+            )
 
 
 def execute(argv=None):

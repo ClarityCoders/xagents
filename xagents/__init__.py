@@ -1,6 +1,7 @@
 from xagents import a2c, acer, ddpg, dqn, ppo, td3, trpo
 from xagents.a2c.agent import A2C
 from xagents.acer.agent import ACER
+from xagents.base import OffPolicy
 from xagents.ddpg.agent import DDPG
 from xagents.dqn.agent import DQN
 from xagents.ppo.agent import PPO

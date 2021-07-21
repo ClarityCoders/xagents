@@ -172,4 +172,15 @@ tune_args = {
     'study': {'help': 'Name of optuna study'},
     'storage': {'help': 'Database url'},
     'n-jobs': {'help': 'Parallel trials', 'type': int, 'default': 1},
+    'warmup-trials': {
+        'help': 'warmup trials before pruning starts',
+        'type': int,
+        'default': 5,
+    },
+    'non-silent': {
+        'help': 'tensorflow, optuna and agent are silenced at trial start'
+        'to avoid repetitive import messages at each trial start, unless'
+        'this flag is specified',
+        'action': 'store_true',
+    },
 }

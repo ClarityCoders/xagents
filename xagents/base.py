@@ -9,6 +9,7 @@ from time import perf_counter, sleep
 import cv2
 import gym
 import numpy as np
+import optuna
 import pandas as pd
 import tensorflow as tf
 import wandb
@@ -183,9 +184,6 @@ class BaseAgent(ABC):
         if self.mean_reward > self.best_reward:
             self.plateau_count = 0
             self.early_stop_count = 0
-            if self.trial:
-                self.trial.report(np.mean(self.total_rewards), self.reported_rewards)
-                self.reported_rewards += 1
             self.display_message(
                 f'Best reward updated: {self.best_reward} -> {self.mean_reward}'
             )
@@ -239,6 +237,11 @@ class BaseAgent(ABC):
             None
         """
         self.checkpoint()
+        if self.trial:
+            self.trial.report(np.mean(self.total_rewards), self.reported_rewards)
+            self.reported_rewards += 1
+            if self.trial.should_prune():
+                raise optuna.exceptions.TrialPruned()
         if (
             self.divergence_monitoring_steps
             and self.steps >= self.divergence_monitoring_steps

@@ -4,10 +4,9 @@ import numpy as np
 import optuna
 import tensorflow as tf
 
-from xagents import PPO
-from xagents.utils.cli import (agent_args, non_agent_args, off_policy_args,
-                               train_args)
-from xagents.utils.common import create_envs
+import xagents
+from xagents.utils.cli import agent_args, non_agent_args, off_policy_args
+from xagents.utils.common import create_agent
 
 
 class Objective:
@@ -18,38 +17,41 @@ class Objective:
         self.agent_args = agent_known_args
         self.non_agent_args = non_agent_known_args
         self.command_args = command_known_args
+        self.arg_groups = [
+            (
+                vars(agent_known_args),
+                {**agent_args, **xagents.agents[agent_id]['module'].cli_args},
+                self.agent_args,
+            ),
+            (
+                vars(non_agent_known_args),
+                {**non_agent_args, **off_policy_args},
+                self.non_agent_args,
+            ),
+        ]
+
+    def set_trial_values(self, trial):
+        for parsed_args, default_args, namespace in self.arg_groups:
+            for arg, possible_values in parsed_args.items():
+                hp_type = default_args[arg.replace('_', '-')].get('hp_type')
+                trial_value = possible_values
+                if isinstance(possible_values, list):
+                    if hp_type and len(possible_values) == 1:
+                        trial_value = possible_values[0]
+                    elif hp_type == 'categorical':
+                        trial_value = trial.suggest_categorical(arg, possible_values)
+                    elif hp_type == 'log_uniform':
+                        trial_value = trial.suggest_loguniform(arg, *possible_values)
+                    elif hp_type == 'int':
+                        trial_value = trial.suggest_int(arg, *possible_values)
+                setattr(namespace, arg, trial_value)
 
     def __call__(self, trial):
-        return 1
-
-
-# def optimize_agent(trial):
-#     hparams = get_hparams(trial)
-#     envs = create_envs('BreakoutNoFrameskip-v4', hparams['n_envs'])
-#     optimizer = Adam(
-#         hparams['learning_rate'],
-#         epsilon=hparams['epsilon'],
-#     )
-#     model = create_model(envs[0].observation_space.shape, envs[0].action_space.n)
-#     model.compile(optimizer)
-#     agent = PPO(
-#         envs,
-#         model,
-#         entropy_coef=hparams['entropy_coef'],
-#         grad_norm=hparams['grad_norm'],
-#         n_steps=hparams['n_steps'],
-#         lam=hparams['lam'],
-#         clip_norm=hparams['clip_norm'],
-#         trial=trial,
-#         log_frequency=1,
-#         quiet=True,
-#     )
-#     steps = 250000
-#     agent.fit(max_steps=steps)
-#     current_rewards = np.around(np.mean(agent.total_rewards), 2)
-#     if not np.isfinite(current_rewards):
-#         current_rewards = 0
-#     return current_rewards
+        self.set_trial_values(trial)
+        agent = create_agent(self.agent_id, vars(self.agent_args), self.non_agent_args)
+        agent.fit(max_steps=self.command_args.trial_steps)
+        trial_reward = np.around(np.mean(agent.total_rewards or [0]), 2)
+        return trial_reward
 
 
 def run_trial(
@@ -57,35 +59,32 @@ def run_trial(
     agent_known_args,
     non_agent_known_args,
     command_known_args,
-    study,
-    storage,
-    direction='maximize',
-    load_if_exists=True,
 ):
-    optuna.logging.set_verbosity(optuna.logging.CRITICAL)
-    tf.get_logger().setLevel('CRITICAL')
+    if not command_known_args.non_silent:
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
+        tf.get_logger().setLevel('ERROR')
+        agent_known_args.quiet = True
+    pruner = optuna.pruners.MedianPruner(command_known_args.warmup_trials)
     study = optuna.create_study(
-        study_name=study,
-        storage=storage,
-        load_if_exists=load_if_exists,
-        direction=direction,
+        study_name=command_known_args.study,
+        storage=command_known_args.storage,
+        load_if_exists=True,
+        direction='maximize',
+        pruner=pruner,
     )
     objective = Objective(
         agent_id, agent_known_args, non_agent_known_args, command_known_args
     )
+    optuna.logging.set_verbosity(optuna.logging.INFO)
     study.optimize(objective, n_trials=1)
-    # frame = study.trials_dataframe()
-    # print(frame.loc[frame.shape[0] - 1])
 
 
-def run_tuning(agent_id, non_agent_known_args, agent_known_args, command_known_args):
+def run_tuning(agent_id, agent_known_args, non_agent_known_args, command_known_args):
     trial_kwargs = {
         'agent_id': agent_id,
         'agent_known_args': agent_known_args,
         'non_agent_known_args': non_agent_known_args,
         'command_known_args': command_known_args,
-        'study': command_known_args.study,
-        'storage': command_known_args.storage,
     }
     with ProcessPoolExecutor(command_known_args.n_jobs) as executor:
         future_trials = [

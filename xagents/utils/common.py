@@ -477,3 +477,52 @@ def create_buffers(
             for _ in range(n_envs)
         ]
     return buffers
+
+
+def create_agent(agent_id, agent_kwargs, non_agent_kwargs):
+    envs = create_envs(
+        non_agent_kwargs.env,
+        non_agent_kwargs.n_envs,
+        non_agent_kwargs.preprocess,
+        scale_frames=not non_agent_kwargs.no_env_scale,
+        max_frame=non_agent_kwargs.max_frame,
+    )
+    agent_kwargs['envs'] = envs
+    optimizer_kwargs = {
+        'learning_rate': non_agent_kwargs.lr,
+        'beta_1': non_agent_kwargs.beta1,
+        'beta_2': non_agent_kwargs.beta2,
+        'epsilon': non_agent_kwargs.opt_epsilon,
+    }
+    models = create_models(
+        agent_kwargs,
+        envs[0],
+        agent_id,
+        optimizer_kwargs=optimizer_kwargs,
+        seed=agent_kwargs['seed'],
+    )
+    agent_kwargs.update(models)
+    if (
+        issubclass(xagents.agents[agent_id]['agent'], xagents.OffPolicy)
+        or agent_id == 'acer'
+    ):
+        buffers = create_buffers(
+            agent_id,
+            non_agent_kwargs.buffer_max_size,
+            non_agent_kwargs.buffer_batch_size,
+            non_agent_kwargs.n_envs,
+            agent_kwargs['gamma'],
+            non_agent_kwargs.buffer_n_steps,
+            non_agent_kwargs.buffer_initial_size,
+        )
+        agent_kwargs['buffers'] = buffers
+    agent = xagents.agents[agent_id]['agent'](**agent_kwargs)
+    if non_agent_kwargs.weights:
+        n_weights = len(non_agent_kwargs.weights)
+        n_models = len(agent.output_models)
+        assert (
+            n_weights == n_models
+        ), f'Expected {n_models} weights to load, got {n_weights}'
+        for weight, model in zip(non_agent_kwargs.weights, agent.output_models):
+            model.load_weights(weight).expect_partial()
+    return agent
