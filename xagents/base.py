@@ -68,6 +68,8 @@ class BaseAgent(ABC):
                 reached / exceeded.
             divergence_monitoring_steps: Number of steps at which reduce on plateau,
                 and early stopping start monitoring.
+            quiet: If True, all agent messages will be silenced.
+            trial: optuna.trial.Trial
         """
         assert envs, 'No environments given'
         self.n_envs = len(envs)
@@ -114,8 +116,25 @@ class BaseAgent(ABC):
             self.set_seeds(seed)
         self.reset_envs()
         self.set_action_count()
+        self.display_titles = (
+            'time',
+            'steps',
+            'games',
+            'speed',
+            'mean reward',
+            'best reward',
+        )
 
     def display_message(self, *args, **kwargs):
+        """
+        Display messages to the console.
+        Args:
+            *args: args passed to print()
+            **kwargs: kwargs passed to print()
+
+        Returns:
+            None
+        """
         if not self.quiet:
             print(*args, **kwargs)
 
@@ -206,14 +225,6 @@ class BaseAgent(ABC):
         Returns:
             None
         """
-        display_titles = (
-            'time',
-            'steps',
-            'games',
-            'speed',
-            'mean reward',
-            'best reward',
-        )
         display_values = (
             timedelta(seconds=perf_counter() - self.training_start_time),
             self.steps,
@@ -223,7 +234,8 @@ class BaseAgent(ABC):
             self.best_reward,
         )
         display = (
-            f'{title}: {value}' for title, value in zip(display_titles, display_values)
+            f'{title}: {value}'
+            for title, value in zip(self.display_titles, display_values)
         )
         self.display_message(', '.join(display))
 
@@ -237,11 +249,6 @@ class BaseAgent(ABC):
             None
         """
         self.checkpoint()
-        if self.trial:
-            self.trial.report(np.mean(self.total_rewards), self.reported_rewards)
-            self.reported_rewards += 1
-            if self.trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
         if (
             self.divergence_monitoring_steps
             and self.steps >= self.divergence_monitoring_steps
@@ -267,6 +274,22 @@ class BaseAgent(ABC):
             np.mean(self.total_rewards), self.display_precision
         )
 
+    def report_rewards(self):
+        """
+        Report intermediate rewards or raise an exception to
+        prune current trial.
+
+        Returns:
+            None
+
+        Raises:
+            optuna.exceptions.TrialPruned
+        """
+        self.trial.report(np.mean(self.total_rewards), self.reported_rewards)
+        self.reported_rewards += 1
+        if self.trial.should_prune():
+            raise optuna.exceptions.TrialPruned()
+
     def check_episodes(self):
         """
         Check environment done counts to display progress and update metrics.
@@ -276,6 +299,8 @@ class BaseAgent(ABC):
         """
         if self.done_envs >= self.log_frequency:
             self.update_metrics()
+            if self.trial:
+                self.report_rewards()
             self.last_reset_time = perf_counter()
             self.display_metrics()
             self.done_envs = 0

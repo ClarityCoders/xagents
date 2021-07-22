@@ -178,8 +178,8 @@ tune_args = {
         'default': 5,
     },
     'non-silent': {
-        'help': 'tensorflow, optuna and agent are silenced at trial start'
-        'to avoid repetitive import messages at each trial start, unless'
+        'help': 'tensorflow, optuna and agent are silenced at trial start\n'
+        'to avoid repetitive import messages at each trial start, unless\n'
         'this flag is specified',
         'action': 'store_true',
     },

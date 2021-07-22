@@ -5,6 +5,17 @@ from xagents.utils.buffers import BaseBuffer, ReplayBuffer2
 
 
 def get_buffer_kwargs(size, buffer_type, initial_size, batch_size):
+    """
+    Construct buffer creation kwargs.
+    Args:
+        size: Buffer max size
+        buffer_type: ReplayBuffer1 or ReplayBuffer2
+        initial_size: Buffer initial pre-train fill size.
+        batch_size: Buffer batch size when get_sample() is called.
+
+    Returns:
+        buffer kwargs as dict.
+    """
     buffer_kwargs = {
         'size': size,
         'initial_size': initial_size,
@@ -16,6 +27,12 @@ def get_buffer_kwargs(size, buffer_type, initial_size, batch_size):
 
 
 def assert_sample_shapes_match(buffer, shapes):
+    """
+    Ensure buffer sample shapes match the expected ones.
+    Args:
+        buffer: ReplayBuffer1 or ReplayBuffer2 instance.
+        shapes: 1 observation list of shapes.
+    """
     sample = buffer.get_sample()
     size = sample[0].shape[0]
     for shape, subsample in zip(shapes, sample):
@@ -37,12 +54,22 @@ class TestBaseBuffer:
     def test_sizes(
         self, buffer_type, size, initial_size, batch_size, exception, exception_kw
     ):
+        """
+        Test size parameters match the expected ones, and proper exceptions
+        are raised.
+
+        Args:
+            buffer_type: ReplayBuffer1 or ReplayBuffer2
+            size: Buffer max size.
+            initial_size: Buffer initial pre-train fill size.
+            batch_size: Buffer batch size when get_sample() is called.
+            exception: Exception raised due to improper size parameters.
+            exception_kw: exception keywords that are expected to be displayed.
+        """
         buffer_kwargs = get_buffer_kwargs(size, buffer_type, initial_size, batch_size)
         if exception:
-            with pytest.raises(exception) as pe:
+            with pytest.raises(exception, match=fr'{exception_kw}'):
                 buffer_type(**buffer_kwargs)
-            if exception_kw:
-                assert exception_kw in pe.value.args[0]
         else:
             buffer = buffer_type(**buffer_kwargs)
             assert buffer.size == size
@@ -52,6 +79,9 @@ class TestBaseBuffer:
             assert buffer.batch_size == batch_size
 
     def test_abstract_methods(self):
+        """
+        Test Ensure BaseBuffer abstract methods raise NotImplementedError
+        """
         buffer = BaseBuffer(32)
         with pytest.raises(NotImplementedError, match=r'should be implemented'):
             buffer.append(1)
@@ -61,7 +91,14 @@ class TestBaseBuffer:
 
 @pytest.mark.usefixtures('buffer1', 'observations')
 class TestBuffer1:
+    """
+    Test ReplayBuffer1 methods.
+    """
+
     def test_reset_temp_history(self):
+        """
+        Test temp sub-buffer works properly.
+        """
         self.buffer.temp_buffer.extend(self.observations)
         state, action, reward, done, new_state = self.buffer.reset_temp_history()
         assert (state == self.observations[0][0]).all()
@@ -81,6 +118,11 @@ class TestBuffer1:
         ],
     )
     def test_append(self, args):
+        """
+        Test ReplayBuffer1.append
+        Args:
+            args: list of dummy observations.
+        """
         self.buffer.append(*args)
         for arg, saved in zip(args, self.buffer.main_buffer[0]):
             if isinstance(arg, np.ndarray):
@@ -89,6 +131,9 @@ class TestBuffer1:
                 assert arg == saved
 
     def test_get_sample(self):
+        """
+        Test sample shapes.
+        """
         shapes = [np.squeeze(item).shape for item in self.observations[0]]
         self.buffer.main_buffer.extend(self.observations)
         assert_sample_shapes_match(self.buffer, shapes)
@@ -96,7 +141,14 @@ class TestBuffer1:
 
 @pytest.mark.usefixtures('observations', 'buffer2')
 class TestBuffer2:
+    """
+    Test ReplayBuffer2 methods.
+    """
+
     def test_append(self):
+        """
+        Ensure observations being stored properly.
+        """
         expected_results = [[] for _ in range(5)]
         for observation in self.observations:
             self.buffer.append(*observation)
@@ -110,6 +162,9 @@ class TestBuffer2:
             assert (np.array(expected) == actual[:size]).all()
 
     def test_get_sample(self):
+        """
+        Test sample shapes.
+        """
         shapes = [np.squeeze(item).shape for item in self.observations[0]]
         for observation in self.observations:
             self.buffer.append(*observation)

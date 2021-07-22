@@ -60,30 +60,39 @@ class TestExecutor:
             assert_flags_displayed(cap, *section)
 
     @staticmethod
-    def add_arg_value(_action, _type, _nargs, test_args, values, flag):
+    def add_arg_value(_action, _type, _nargs, hp_type, test_args, values, flag, tuning):
         """
         Generate random values for the given arg according to its attributes.
         Args:
             _action: If True, True will be stored.
             _type: Argument type.
             _nargs: Argument number of expected values.
+            hp_type: Hyper parameter type.
             test_args: argv that is being created.
             values: A dictionary of flags - expected values
             flag: Flag to which a value is generated.
+            tuning: If True, flags that have an `hp_type`
+                will support multiple parameters which will
+                be parsed according to their type.
 
         Returns:
             None
         """
+        multiple_values = [random.randint(0, 100000) for _ in range(10)]
+        multiple_values.sort()
         if not _action:
-            if _type in [int, float]:
+            if tuning and hp_type:
+                if hp_type == 'categorical':
+                    value = multiple_values
+                else:
+                    value = multiple_values[:2]
+            elif _nargs:
+                values_type = _type or str
+                value = [values_type(item) for item in multiple_values]
+            elif _type in [int, float]:
                 value = random.randint(0, 100)
             else:
                 value = ''.join(random.sample(string.ascii_lowercase, 10))
-            if _nargs:
-                value = [
-                    ''.join(random.sample(string.ascii_lowercase, 10))
-                    for _ in range(10)
-                ]
             if not isinstance(value, list):
                 test_args.append(str(value))
                 values[flag] = value
@@ -94,7 +103,8 @@ class TestExecutor:
         else:
             values[flag] = True
 
-    def test_add_args(self, section):
+    @pytest.mark.parametrize('tuning', [True, False])
+    def test_add_args(self, section, tuning):
         """
         Add given section to executor args, generate values, parse args
         and test if the values match.
@@ -102,7 +112,7 @@ class TestExecutor:
             section: Tuple of argument group name and respective dict of args.
         """
         parser = argparse.ArgumentParser()
-        self.executor.add_args(section[1], parser)
+        self.executor.add_args(section[1], parser, tuning)
         test_args = []
         values = {}
         for flag, options in section[1].items():
@@ -111,8 +121,11 @@ class TestExecutor:
             _type = options.get('type')
             _action = options.get('action')
             _nargs = options.get('nargs')
+            _hp_type = options.get('hp_type')
             test_args.append(f'--{flag}')
-            self.add_arg_value(_action, _type, _nargs, test_args, values, flag)
+            self.add_arg_value(
+                _action, _type, _nargs, _hp_type, test_args, values, flag, tuning
+            )
         parsed_args = parser.parse_args(test_args)
         for attr, value in values.items():
             assert getattr(parsed_args, attr.replace('-', '_')) == value
@@ -168,23 +181,31 @@ class TestExecutor:
         assert self.executor.agent_id == agent_id
         assert self.executor.command == command
 
-    def test_parse_known_args(self, command, agent_id):
+    @pytest.mark.parametrize('tuning', [True, False])
+    def test_parse_known_args(self, command, agent_id, tuning):
         """
         Ensure agent kwargs + non-agent kwargs + command kwargs match
         the expected ones given command and agent + minimum other flags.
         Args:
             command: One of the commands available in xagents.commands
             agent_id: One of the agent ids available in xagents.agents
+            tuning: If True, flags that have an `hp_type`
+                will support multiple parameters which will
+                be parsed according to their type.
         """
         self.executor.command = command
         self.executor.agent_id = agent_id
         argv = [command, agent_id, '--env', 'test-env']
         if command == 'train':
+            with pytest.raises(AssertionError, match=r'train requires'):
+                self.executor.parse_known_args(argv, tuning)
             argv.extend(['--target-reward', '18'])
-        agent_args, non_agent_args, command_args = self.executor.parse_known_args(argv)
+        agent_args, non_agent_args, command_args = self.executor.parse_known_args(
+            argv, tuning
+        )
         unknown_argv = argv + ['--unknown-flag', 'unknown-value']
         with pytest.warns(UserWarning, match=r'Got unknown'):
-            self.executor.parse_known_args(unknown_argv)
+            self.executor.parse_known_args(unknown_argv, tuning)
         actual = {**vars(agent_args), **vars(non_agent_args), **vars(command_args)}
         assert set(get_expected_flags(argv, True)) == set(actual.keys())
 

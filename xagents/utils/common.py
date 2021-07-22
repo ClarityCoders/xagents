@@ -296,17 +296,19 @@ def register_models(agents):
                 agent_data[key] = val
 
 
-def get_wandb_key(default_folder=None):
+def get_wandb_key(configuration_file=None):
     """
     Check ~/.netrc and WANDB_API_KEY environment variable for wandb api key.
     Args:
-        default_folder: Path to wandb configuration file, if not specified,
+        configuration_file: Path to wandb configuration file, if not specified,
             defaults to ~/.netrc
 
     Returns:
         Key found or None
     """
-    login_file = Path(default_folder) if default_folder else Path.home() / '.netrc'
+    login_file = (
+        Path(configuration_file) if configuration_file else Path.home() / '.netrc'
+    )
     if login_file.exists():
         with open(login_file) as cfg:
             contents = cfg.read()
@@ -385,6 +387,20 @@ def write_from_dict(_dict, path):
 def create_model(
     env, agent_id, model_type, optimizer_kwargs=None, seed=None, model_cfg=None
 ):
+    """
+    Create model from a given model cfg or from default configuration if any.
+    Args:
+        env: gym environment.
+        agent_id: str, one of the keys in xagents.agents
+        model_type: 'model' or 'actor_model' or 'critic_model'
+        optimizer_kwargs: A dictionary of epsilon, that may contain one or more of
+            `learning_rate`, `beta_1` or `beta_2`
+        seed: random seed passed to layer initializers.
+        model_cfg: Path to .cfg containing a compatible model configuration.
+
+    Returns:
+        tf.keras.Model
+    """
     units = [
         env.action_space.n
         if isinstance(env.action_space, Discrete)
@@ -425,6 +441,17 @@ def create_model(
 
 
 def create_models(options, env, agent_id, **kwargs):
+    """
+    Create agent models
+    Args:
+        options: iterable that has `model` or (`actor_model` and `critic_model`)
+        env: gym environment
+        agent_id: str, one of the keys in xagents.agents
+        **kwargs: kwargs passed to xagents.utils.common.create_model()
+
+    Returns:
+        list of model(s)
+    """
     model_types = ['model', 'actor_model', 'critic_model']
     models = {}
     for model_type in model_types:
@@ -448,6 +475,24 @@ def create_buffers(
     initial_size=None,
     as_total=True,
 ):
+    """
+    Create deque-based or numpy-based replay buffers.
+    Args:
+        agent_id: str, one of the keys in xagents.agents
+        max_size: Buffer max size.
+        batch_size: Buffer batch size when get_sample() is called.
+        n_envs: Number of environments which will result in an equal
+            number of buffers.
+        gamma: Buffer discount factor (useful only if n_steps > 1)
+        n_steps: Buffer transition steps.
+        initial_size: Buffer initial pre-training fill size.
+        as_total: If False, total buffer initial, buffer max, and batch sizes
+            are respectively buffer initial x n_envs, buffer max x n_envs,
+            and batch_size x n_envs.
+
+    Returns:
+        list of buffers.
+    """
     initial_size = initial_size or max_size
     if as_total:
         max_size //= n_envs
@@ -479,20 +524,33 @@ def create_buffers(
     return buffers
 
 
-def create_agent(agent_id, agent_kwargs, non_agent_kwargs):
+def create_agent(agent_id, agent_kwargs, non_agent_kwargs, trial=None):
+    """
+    Test agent creation with all sub-components, including environments,
+    models and buffers.
+    Args:
+        agent_id: str, one of the keys in xagents.agents
+        agent_kwargs: dictionary of agent kwargs, values
+        non_agent_kwargs: dictionary of non-agent kwargs, values
+        trial: optuna.trial.Trial
+
+    Returns:
+        agent.
+    """
+    agent_kwargs['trial'] = trial
     envs = create_envs(
-        non_agent_kwargs.env,
-        non_agent_kwargs.n_envs,
-        non_agent_kwargs.preprocess,
-        scale_frames=not non_agent_kwargs.no_env_scale,
-        max_frame=non_agent_kwargs.max_frame,
+        non_agent_kwargs['env'],
+        non_agent_kwargs['n_envs'],
+        non_agent_kwargs['preprocess'],
+        scale_frames=not non_agent_kwargs['no_env_scale'],
+        max_frame=non_agent_kwargs['max_frame'],
     )
     agent_kwargs['envs'] = envs
     optimizer_kwargs = {
-        'learning_rate': non_agent_kwargs.lr,
-        'beta_1': non_agent_kwargs.beta1,
-        'beta_2': non_agent_kwargs.beta2,
-        'epsilon': non_agent_kwargs.opt_epsilon,
+        'learning_rate': non_agent_kwargs['lr'],
+        'beta_1': non_agent_kwargs['beta1'],
+        'beta_2': non_agent_kwargs['beta2'],
+        'epsilon': non_agent_kwargs['opt_epsilon'],
     }
     models = create_models(
         agent_kwargs,
@@ -508,21 +566,21 @@ def create_agent(agent_id, agent_kwargs, non_agent_kwargs):
     ):
         buffers = create_buffers(
             agent_id,
-            non_agent_kwargs.buffer_max_size,
-            non_agent_kwargs.buffer_batch_size,
-            non_agent_kwargs.n_envs,
+            non_agent_kwargs['buffer_max_size'],
+            non_agent_kwargs['buffer_batch_size'],
+            non_agent_kwargs['n_envs'],
             agent_kwargs['gamma'],
-            non_agent_kwargs.buffer_n_steps,
-            non_agent_kwargs.buffer_initial_size,
+            non_agent_kwargs['buffer_n_steps'],
+            non_agent_kwargs['buffer_initial_size'],
         )
         agent_kwargs['buffers'] = buffers
     agent = xagents.agents[agent_id]['agent'](**agent_kwargs)
-    if non_agent_kwargs.weights:
-        n_weights = len(non_agent_kwargs.weights)
-        n_models = len(agent.output_models)
+    if non_agent_kwargs['weights']:
+        n_weights = len(non_agent_kwargs['weights'])
+        n_models = len(agent['output_models'])
         assert (
             n_weights == n_models
         ), f'Expected {n_models} weights to load, got {n_weights}'
-        for weight, model in zip(non_agent_kwargs.weights, agent.output_models):
+        for weight, model in zip(non_agent_kwargs['weights'], agent.output_models):
             model.load_weights(weight).expect_partial()
     return agent

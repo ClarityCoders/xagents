@@ -3,11 +3,14 @@ from time import perf_counter
 
 import gym
 import numpy as np
+import optuna
 import pandas as pd
 import pytest
 import tensorflow as tf
 import wandb
 from gym.spaces import Discrete
+from optuna import Trial
+from optuna.distributions import UniformDistribution
 
 import xagents
 from xagents import A2C, ACER, DDPG, DQN, PPO, TD3, TRPO
@@ -63,7 +66,7 @@ class DummyAgent(BaseAgent):
         print(f'step ending')
 
 
-@pytest.mark.usefixtures('envs', 'envs2', 'model', 'buffers')
+@pytest.mark.usefixtures('envs', 'envs2', 'model', 'buffers', 'study')
 class TestBase:
     """
     Tests for base agents and their methods.
@@ -86,7 +89,7 @@ class TestBase:
         self, agent, envs=None, model=None, buffers=None, critic_model=None
     ):
         """
-        Construct agent required kwargs with according to the given agent.
+        Construct agent required kwargs according to the given agent.
         Args:
             agent: OnPolicy/OffPolicy subclass.
             envs: A list of gym environments, if not specified, the default
@@ -131,6 +134,15 @@ class TestBase:
         with pytest.raises(AssertionError, match=r'No environments given'):
             agent_kwargs = self.get_agent_kwargs(agent, [])
             agent(**agent_kwargs)
+
+    def test_display_message(self, agent, capsys):
+        agent = agent(**self.get_agent_kwargs(agent))
+        message = 'displayed message'
+        agent.display_message(message)
+        assert message in capsys.readouterr().out
+        agent.quiet = True
+        agent.display_message(message)
+        assert not capsys.readouterr().out
 
     def test_seeds(self, agent):
         """
@@ -432,6 +444,44 @@ class TestBase:
             assert agent.early_stop_count == early_stop_count + 1
         elif mean_reward < best_reward and steps >= agent.divergence_monitoring_steps:
             assert agent.plateau_count == plateau_count + 1
+
+    def test_report_rewards(self, agent):
+        """
+        Test rewards are being reported as expected, and ensure
+        unpromising branches are raising the appropriate exception.
+        Args:
+            agent: OnPolicy/OffPolicy subclass.
+        """
+        agent = agent(**self.get_agent_kwargs(agent))
+        start_values = np.sort(np.random.randint(0, 100, 5))
+        trial1 = optuna.trial.create_trial(
+            params={'x': 2.0},
+            distributions={'x': UniformDistribution(0, 10)},
+            intermediate_values={i: start_values[i] for i in range(len(start_values))},
+            value=55,
+        )
+        self.study.add_trial(trial1)
+        trial2 = Trial(
+            self.study, self.study._storage.create_new_trial(self.study._study_id)
+        )
+        agent.trial = trial2
+        expected_rewards = start_values * 10
+        for reward in expected_rewards:
+            agent.total_rewards.append(reward)
+            agent.report_rewards()
+        reported_rewards = self.study.trials[-1].intermediate_values
+        assert len(reported_rewards) == len(expected_rewards)
+        for i in range(len(reported_rewards)):
+            assert np.mean(expected_rewards[: i + 1]) == reported_rewards[i]
+        trial3 = Trial(
+            self.study, self.study._storage.create_new_trial(self.study._study_id)
+        )
+        agent.trial = trial3
+        agent.total_rewards.clear()
+        agent.reported_rewards = 0
+        agent.total_rewards.append(-1)
+        with pytest.raises(optuna.exceptions.TrialPruned):
+            agent.report_rewards()
 
     def test_check_episodes(self, capsys, agent):
         """

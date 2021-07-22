@@ -39,7 +39,9 @@ class Executor:
         section_frame = pd.DataFrame(cli_args).T.fillna('-')
         section_frame['flags'] = section_frame.index.values
         section_frame['flags'] = section_frame['flags'].apply(lambda flag: f'--{flag}')
-        section_frame = section_frame.reset_index(drop=True).set_index('flags')
+        section_frame = (
+            section_frame.reset_index(drop=True).set_index('flags').sort_index()
+        )
         print(f'\n{title}\n')
         print(
             section_frame[
@@ -82,6 +84,9 @@ class Executor:
         Args:
             cli_args: A dictionary of args and options.
             parser: argparse.ArgumentParser
+            tuning: If True, flags that have an `hp_type`
+                will support multiple parameters which will
+                be parsed according to their type.
 
         Returns:
             None.
@@ -94,10 +99,9 @@ class Executor:
             _required = options.get('required')
             _nargs = options.get('nargs')
             _hp_type = options.get('hp_type')
-            if tuning:
-                if _hp_type:
-                    _nargs = '*'
             if not _action:
+                if tuning and _hp_type:
+                    _nargs = '*'
                 parser.add_argument(
                     f'--{arg}',
                     help=_help,
@@ -149,6 +153,16 @@ class Executor:
         self.command, self.agent_id = command, agent_id
 
     def parse_known_args(self, argv, tuning=False):
+        """
+        Parse general, agent and command specific args.
+        Args:
+            argv: Arguments passed through sys.argv or otherwise.
+            tuning: If True, flags that have an `hp_type`
+                will support multiple parameters which will
+                be parsed according to their type.
+        Returns:
+            agent kwargs, non-agent kwargs and command kwargs.
+        """
         general_parser = argparse.ArgumentParser()
         agent_parser = argparse.ArgumentParser()
         command_parser = argparse.ArgumentParser()
@@ -202,8 +216,9 @@ class Executor:
             agent_known, non_agent_known, command_known = self.parse_known_args(
                 argv,
             )
-            agent_known = vars(agent_known)
-            self.agent = create_agent(self.agent_id, agent_known, non_agent_known)
+            self.agent = create_agent(
+                self.agent_id, vars(agent_known), vars(non_agent_known)
+            )
             getattr(self.agent, xagents.commands[self.command][1])(
                 **vars(command_known)
             )

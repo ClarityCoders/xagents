@@ -1,3 +1,4 @@
+import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
@@ -48,7 +49,9 @@ class Objective:
 
     def __call__(self, trial):
         self.set_trial_values(trial)
-        agent = create_agent(self.agent_id, vars(self.agent_args), self.non_agent_args)
+        agent = create_agent(
+            self.agent_id, vars(self.agent_args), vars(self.non_agent_args), trial
+        )
         agent.fit(max_steps=self.command_args.trial_steps)
         trial_reward = np.around(np.mean(agent.total_rewards or [0]), 2)
         return trial_reward
@@ -61,8 +64,9 @@ def run_trial(
     command_known_args,
 ):
     if not command_known_args.non_silent:
-        optuna.logging.set_verbosity(optuna.logging.ERROR)
         tf.get_logger().setLevel('ERROR')
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
         agent_known_args.quiet = True
     pruner = optuna.pruners.MedianPruner(command_known_args.warmup_trials)
     study = optuna.create_study(
@@ -86,10 +90,11 @@ def run_tuning(agent_id, agent_known_args, non_agent_known_args, command_known_a
         'non_agent_known_args': non_agent_known_args,
         'command_known_args': command_known_args,
     }
-    with ProcessPoolExecutor(command_known_args.n_jobs) as executor:
-        future_trials = [
-            executor.submit(run_trial, **trial_kwargs)
-            for _ in range(command_known_args.n_trials)
-        ]
-        for future_trial in as_completed(future_trials):
-            future_trial.result()
+    for _ in range(command_known_args.n_trials // command_known_args.n_jobs):
+        with ProcessPoolExecutor(command_known_args.n_jobs) as executor:
+            future_trials = [
+                executor.submit(run_trial, **trial_kwargs)
+                for _ in range(command_known_args.n_jobs)
+            ]
+            for future_trial in as_completed(future_trials):
+                future_trial.result()

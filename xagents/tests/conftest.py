@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import optuna
 import pytest
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.models import Model
@@ -9,7 +10,8 @@ from xagents import ACER, DDPG, DQN, TD3
 from xagents.base import BaseAgent, OffPolicy, OnPolicy
 from xagents.cli import Executor
 from xagents.utils.buffers import ReplayBuffer1, ReplayBuffer2
-from xagents.utils.cli import agent_args, non_agent_args, play_args, train_args
+from xagents.utils.cli import (agent_args, non_agent_args, play_args,
+                               train_args, tune_args)
 
 
 @pytest.fixture(scope='function')
@@ -31,6 +33,7 @@ def executor(request):
         ('agent', agent_args),
         ('train', train_args),
         ('play', play_args),
+        ('tune', tune_args),
         ('do-nothing', {}),
     ]
 )
@@ -234,3 +237,17 @@ def observations(request):
     request.cls.observations = [
         [*items] for items in zip(states, actions, rewards, dones, new_states)
     ]
+
+
+@pytest.fixture(scope='class')
+def study(request):
+    """
+    Fixture that provides optuna.study.Study to test tuning components.
+    Args:
+        request: _pytest.fixtures.SubRequest
+
+    Returns:
+        None
+    """
+    pruner = optuna.pruners.MedianPruner(1)
+    request.cls.study = optuna.create_study(pruner=pruner, direction='maximize')
