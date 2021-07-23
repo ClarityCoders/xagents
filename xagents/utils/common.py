@@ -577,7 +577,7 @@ def create_agent(agent_id, agent_kwargs, non_agent_kwargs, trial=None):
     agent = xagents.agents[agent_id]['agent'](**agent_kwargs)
     if non_agent_kwargs['weights']:
         n_weights = len(non_agent_kwargs['weights'])
-        n_models = len(agent['output_models'])
+        n_models = len(agent.output_models)
         assert (
             n_weights == n_models
         ), f'Expected {n_models} weights to load, got {n_weights}'

@@ -11,9 +11,22 @@ from xagents.utils.common import create_agent
 
 
 class Objective:
+    """
+    Objective function wrapper class.
+    """
+
     def __init__(
         self, agent_id, agent_known_args, non_agent_known_args, command_known_args
     ):
+        """
+        Initialize objective function parameters.
+        Args:
+            agent_id: One of the agent ids available in xagents.agents
+            agent_known_args: argparse.Namespace, containing options passed to agent.
+            non_agent_known_args: argparse.Namespace, containing options passed to
+                environments, optimizer and other non-agent objects.
+            command_known_args: argparse.Namespace, containing command-specific options.
+        """
         self.agent_id = agent_id
         self.agent_args = agent_known_args
         self.non_agent_args = non_agent_known_args
@@ -32,6 +45,15 @@ class Objective:
         ]
 
     def set_trial_values(self, trial):
+        """
+        Set values of all available hyper parameters that are specified
+        to be tuned.
+        Args:
+            trial: optuna.trial.Trial
+
+        Returns:
+            None
+        """
         for parsed_args, default_args, namespace in self.arg_groups:
             for arg, possible_values in parsed_args.items():
                 hp_type = default_args[arg.replace('_', '-')].get('hp_type')
@@ -48,6 +70,14 @@ class Objective:
                 setattr(namespace, arg, trial_value)
 
     def __call__(self, trial):
+        """
+        Objective function called by optuna.study.Study.optimize
+        Args:
+            trial: optuna.trial.Trial
+
+        Returns:
+            Trial reward.
+        """
         self.set_trial_values(trial)
         agent = create_agent(
             self.agent_id, vars(self.agent_args), vars(self.non_agent_args), trial
@@ -63,6 +93,18 @@ def run_trial(
     non_agent_known_args,
     command_known_args,
 ):
+    """
+    Run one trial.
+    Args:
+        agent_id: One of the agent ids available in xagents.agents
+        agent_known_args: argparse.Namespace, containing options passed to agent.
+        non_agent_known_args: argparse.Namespace, containing options passed to
+            environments, optimizer and other non-agent objects.
+        command_known_args: argparse.Namespace, containing command-specific options.
+
+    Returns:
+        None
+    """
     if not command_known_args.non_silent:
         tf.get_logger().setLevel('ERROR')
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -84,6 +126,18 @@ def run_trial(
 
 
 def run_tuning(agent_id, agent_known_args, non_agent_known_args, command_known_args):
+    """
+    Run tuning session with tuning specs specified in command_known_args.
+    Args:
+        agent_id: One of the agent ids available in xagents.agents
+        agent_known_args: argparse.Namespace, containing options passed to agent.
+        non_agent_known_args: argparse.Namespace, containing options passed to
+            environments, optimizer and other non-agent objects.
+        command_known_args: argparse.Namespace, containing command-specific options.
+
+    Returns:
+        None
+    """
     trial_kwargs = {
         'agent_id': agent_id,
         'agent_known_args': agent_known_args,

@@ -94,7 +94,7 @@ selection of algorithms can be used directly or through command line.
 * Unit tests.
 * Models are loaded from .cfg files.
 * Training history checkpoints.
-* Single / multiple training history plotting.
+* Single / multiple training history visualization.
 * Reproducible results.
 * Gameplay output to .jpg frames or .mp4 vid.
 
