@@ -245,7 +245,7 @@ class TestExecutor:
                 'args': 'train a2c --env PongNoFrameskip-v4 --entropy-coef 5 '
                 '--value-loss-coef 33 --grad-norm 7 --checkpoints xyz.tf '
                 '--reward-buffer-size 150 --n-steps 100 --gamma 0.88 '
-                '--display-precision 3 --seed 55 --scale-inputs '
+                '--display-precision 3 --seed 55 '
                 '--log-frequency 28 --n-envs 25 --lr 0.555 --opt-epsilon 0.3 '
                 '--beta1 15 --beta2 12 --max-steps 1',
                 'agent': {
@@ -257,7 +257,6 @@ class TestExecutor:
                     'gamma': 0.88,
                     'display_precision': 3,
                     'seed': 55,
-                    'scale_inputs': True,
                     'log_frequency': 28,
                     'n_envs': 25,
                 },

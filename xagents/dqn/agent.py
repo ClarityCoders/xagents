@@ -51,8 +51,7 @@ class DQN(OffPolicy):
         self.batch_indices = tf.range(
             self.buffers[0].batch_size * self.n_envs, dtype=tf.int64
         )[:, tf.newaxis]
-        self.tf_batch_dtypes = [tf.uint8] + 3 * [tf.float32] + [tf.uint8]
-        self.np_batch_dtypes = [np.uint8] + 3 * [np.float32] + [np.uint8]
+        self.tf_batch_dtypes = 5 * [tf.float32]
 
     @staticmethod
     def get_action_indices(batch_indices, actions):
@@ -70,8 +69,7 @@ class DQN(OffPolicy):
     @tf.function
     def get_model_outputs(self, inputs, models, training=True):
         """
-        Get inputs and apply normalization if `scale_inputs` was specified earlier,
-        then return model outputs.
+        Get model outputs (actions)
         Args:
             inputs: Inputs as tensors / numpy arrays that are expected
                 by the given model.

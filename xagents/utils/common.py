@@ -21,6 +21,38 @@ import xagents
 from xagents.utils.buffers import ReplayBuffer1, ReplayBuffer2
 
 
+class LazyFrames:
+    def __init__(self, frames):
+        self.frames = frames
+        self.out = None
+        self.dtype = frames.dtype
+
+    def _force(self):
+        if self.out is None:
+            self.out = np.concatenate(self.frames, axis=-1)
+            self.frames = None
+        return self.out
+
+    def __array__(self, dtype=None):
+        out = self.force()
+        if dtype is not None:
+            out = out.astype(dtype)
+        return out
+
+    def __len__(self):
+        return len(self.force())
+
+    def __getitem__(self, i):
+        return self.force()[i]
+
+    def count(self):
+        frames = self.force()
+        return frames.shape[frames.ndim - 1]
+
+    def frame(self, i):
+        return self.force()[..., i]
+
+
 class AtariWrapper(gym.Wrapper):
     """
     gym wrapper for preprocessing atari frames.
@@ -536,7 +568,6 @@ def create_agent(agent_id, agent_kwargs, non_agent_kwargs, trial=None):
         non_agent_kwargs['env'],
         non_agent_kwargs['n_envs'],
         non_agent_kwargs['preprocess'],
-        scale_frames=not non_agent_kwargs['no_env_scale'],
         max_frame=non_agent_kwargs['max_frame'],
     )
     agent_kwargs['envs'] = envs

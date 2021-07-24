@@ -202,7 +202,6 @@ which should list command + agent options combined
 | --n-envs                      | Number of environments to create                                             | -          | 1         |
 | --preprocess                  | If specified, states will be treated as atari frames                         | -          | -         |
 |                               | and preprocessed accordingly                                                 |            |           |
-| --no-env-scale                | If specified, frames will not be scaled by preprocessor                      | -          | -         |
 | --lr                          | Learning rate passed to a tensorflow.keras.optimizers.Optimizer              | -          | 0.0007    |
 | --opt-epsilon                 | Epsilon passed to a tensorflow.keras.optimizers.Optimizer                    | -          | 1e-07     |
 | --beta1                       | Beta1 passed to a tensorflow.keras.optimizers.Optimizer                      | -          | 0.9       |
@@ -214,7 +213,6 @@ which should list command + agent options combined
 | --gamma                       | Discount factor                                                              | -          | 0.99      |
 | --display-precision           | Number of decimals to be displayed                                           | -          | 2         |
 | --seed                        | Random seed                                                                  | -          | -         |
-| --scale-inputs                | If specified, inputs will be scaled by agent                                 | -          | -         |
 | --log-frequency               | Log progress every n games                                                   | -          | -         |
 | --checkpoints                 | Path(s) to new model(s) to which checkpoint(s) will be saved during training | -          | -         |
 | --history-checkpoint          | Path to .parquet file to save training history                               | -          | -         |
@@ -239,8 +237,6 @@ which should list command + agent options combined
 * You can also use external models by passing them to agent constructor. If you do, you will have to ensure
   your models outputs match what the implementation expects, or modify it accordingly.
 * For atari environments / the ones that return an image by default, use the `--preprocess` flag for image preprocessing.
-* Also for atari environments when specified with agents that use a replay buffer including ACER, DQN
-  you should use `--no-env-scale` and `--scale-inputs` flags otherwise you'll get an error. This applies to training and playing.
 * For checkpoints to be saved, `--checkpoints <checkpoint1.tf> <checkpoint2.tf>` should
 be specified for the model(s) to be saved. The number of passed checkpoints should match the number
   of models the agent accepts.
@@ -321,7 +317,7 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
 
 **Command line**
 
-    xagents train acer --env PongNoFrameskip-v4 --target-reward 19 --n-envs 16 --preprocess --checkpoints acer-pong.tf --buffer-max-size 5000 --buffer-initial-size 500 --buffer-batch-size 16 --trust-region --no-env-scale --scale-inputs
+    xagents train acer --env PongNoFrameskip-v4 --target-reward 19 --n-envs 16 --preprocess --checkpoints acer-pong.tf --buffer-max-size 5000 --buffer-initial-size 500 --buffer-batch-size 16 --trust-region
 
 **Non-command line**
 
@@ -332,7 +328,7 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
     from xagents.utils.buffers import ReplayBuffer1
     from xagents.utils.common import ModelReader, create_envs
     
-    envs = create_envs('PongNoFrameskip-v4', 16, scale_frames=False)
+    envs = create_envs('PongNoFrameskip-v4', 16)
     buffers = [
         ReplayBuffer1(5000, initial_size=500, batch_size=1) for _ in range(len(envs))
     ]
@@ -344,7 +340,7 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
         input_shape=envs[0].observation_space.shape,
         optimizer=optimizer,
     ).build_model()
-    agent = ACER(envs, model, buffers, checkpoints=['acer-pong.tf'], scale_inputs=True)
+    agent = ACER(envs, model, buffers, checkpoints=['acer-pong.tf'])
     agent.fit(target_reward=19)
 
 ### *DDPG*
@@ -428,7 +424,7 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
 
 **Command line**
 
-    xagents train dqn --env PongNoFrameskip-v4 --target-reward 19 --n-envs 3 --lr 1e-4 --preprocess --checkpoints dqn-pong.tf --scale-inputs --no-env-scale --buffer-max-size 50000 --buffer-initial-size 10000 --max-frame
+    xagents train dqn --env PongNoFrameskip-v4 --target-reward 19 --n-envs 3 --lr 1e-4 --preprocess --checkpoints dqn-pong.tf --buffer-max-size 50000 --buffer-initial-size 10000 --max-frame
 
 **Non-command line**
 
@@ -439,7 +435,7 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
     from xagents.utils.buffers import ReplayBuffer1
     from xagents.utils.common import ModelReader, create_envs
     
-    envs = create_envs('PongNoFrameskip-v4', 3, scale_frames=False, max_frame=True)
+    envs = create_envs('PongNoFrameskip-v4', 3, max_frame=True)
     buffers = [
         ReplayBuffer1(16666, initial_size=3333, batch_size=10) for _ in range(len(envs))
     ]
@@ -451,7 +447,7 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
         input_shape=envs[0].observation_space.shape,
         optimizer=optimizer,
     ).build_model()
-    agent = DQN(envs, model, buffers, checkpoints=['dqn-pong.tf'], scale_inputs=True)
+    agent = DQN(envs, model, buffers, checkpoints=['dqn-pong.tf'])
     agent.fit(target_reward=19)
 
 **Note:** if you need a DDQN, specify `double=True` to the agent constructor or `--double`

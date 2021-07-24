@@ -30,7 +30,6 @@ class BaseAgent(ABC):
         gamma=0.99,
         display_precision=2,
         seed=None,
-        scale_inputs=False,
         log_frequency=None,
         history_checkpoint=None,
         plateau_reduce_factor=0.9,
@@ -56,7 +55,6 @@ class BaseAgent(ABC):
             display_precision: Decimal precision for display purposes.
             seed: Random seed passed to random.seed(), np.random.seed(), tf.random.seed(),
                 env.seed()
-            scale_inputs: If true, model inputs will be divided by 255.
             log_frequency: Interval of done games to display progress after each,
                 defaults to the number of environments given if not specified.
             history_checkpoint: Path to .parquet file to which episode history will be saved.
@@ -81,7 +79,6 @@ class BaseAgent(ABC):
         self.gamma = gamma
         self.display_precision = display_precision
         self.seed = seed
-        self.scale_inputs = scale_inputs
         self.output_models = [self.model]
         self.log_frequency = log_frequency or self.n_envs
         self.id = self.__module__.split('.')[1]
@@ -337,17 +334,12 @@ class BaseAgent(ABC):
                 buffer = self.buffers[i]
                 batch = buffer.get_sample()
                 batches.append(batch)
-            dtypes = (
-                self.np_batch_dtypes
-                if hasattr(self, 'np_batch_dtypes')
-                else [np.float32 for _ in range(len(batches[0]))]
-            )
             if len(batches) > 1:
                 return [
-                    np.concatenate(item).astype(dtype)
-                    for (item, dtype) in zip(zip(*batches), dtypes)
+                    np.concatenate(item)
+                    for item in zip(*batches)
                 ]
-            return [item.astype(dtype) for (item, dtype) in zip(batches[0], dtypes)]
+            return batches[0]
 
     def update_history(self, episode_reward):
         """
@@ -471,23 +463,9 @@ class BaseAgent(ABC):
             f'train_step() should be implemented by {self.__class__.__name__} subclasses'
         )
 
-    def get_model_inputs(self, inputs):
-        """
-        Get inputs and apply normalization if `scale_inputs` was specified earlier.
-        Args:
-            inputs: Inputs as tensors / numpy arrays that are expected
-                by the given model(s).
-        Returns:
-
-        """
-        if not self.scale_inputs:
-            return inputs
-        return tf.cast(inputs, tf.float32) / 255
-
     def get_model_outputs(self, inputs, models, training=True):
         """
-        Get inputs and apply normalization if `scale_inputs` was specified earlier,
-        then return model outputs.
+        Get single or multiple model outputs.
         Args:
             inputs: Inputs as tensors / numpy arrays that are expected
                 by the given model(s).
@@ -498,7 +476,6 @@ class BaseAgent(ABC):
             Outputs as a list in case of multiple models or any other shape
             that is expected from the given model(s).
         """
-        inputs = self.get_model_inputs(inputs)
         if isinstance(models, tf.keras.models.Model):
             return models(inputs, training=training)
         elif len(models) == 1:
@@ -634,7 +611,7 @@ class BaseAgent(ABC):
                 )
                 cv2.imwrite(os.path.join(frame_dir, f'{steps:05d}.jpg'), frame)
             if hasattr(self, 'actor') and agent_id in ['td3', 'ddpg']:
-                action = self.actor(self.get_model_inputs(self.get_states()))[env_idx]
+                action = self.actor(self.get_states())[env_idx]
             else:
                 action = self.get_model_outputs(
                     self.get_states(), self.output_models, False

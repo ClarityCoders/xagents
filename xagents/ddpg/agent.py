@@ -51,7 +51,6 @@ class DDPG(OffPolicy):
             (self.critic, self.target_critic),
         ]
         self.tf_batch_dtypes = 5 * [tf.float32]
-        self.np_batch_dtypes = 5 * [np.float32]
 
     def get_step_actions(self):
         """

@@ -16,8 +16,12 @@ import xagents
 from xagents import A2C, ACER, DDPG, DQN, PPO, TD3, TRPO
 from xagents.base import BaseAgent, OffPolicy, OnPolicy
 from xagents.utils.buffers import ReplayBuffer1
-from xagents.utils.common import (create_buffers, create_models, get_wandb_key,
-                                  write_from_dict)
+from xagents.utils.common import (
+    create_buffers,
+    create_models,
+    get_wandb_key,
+    write_from_dict,
+)
 
 
 class DummyAgent(BaseAgent):
@@ -567,16 +571,12 @@ class TestBase:
         with pytest.raises(ValueError, match=r'Sample larger than population'):
             agent.concat_buffer_samples()
         seen = []
-        agent.np_batch_dtypes = [np.float64, np.float16, np.float32, np.int16, np.int32]
         for i, buffer in enumerate(agent.buffers):
             observation = [[i], [i * 10], [i * 100], [i * 1000], [i * 10000]]
             seen.append(observation)
             buffer.append(*observation)
         expected = np.squeeze(np.array(seen)).T
         result = np.array(agent.concat_buffer_samples())
-        assert [
-            item.dtype for item in agent.concat_buffer_samples()
-        ] == agent.np_batch_dtypes
         assert (result == expected).all()
 
     @pytest.mark.parametrize(
@@ -649,24 +649,6 @@ class TestBase:
         agent = base_agent(**self.get_agent_kwargs(base_agent))
         with pytest.raises(NotImplementedError, match=r'should be implemented by'):
             agent.train_step()
-
-    def test_get_model_inputs(self, agent):
-        """
-        Validate `scale_inputs` arg passed to agent and ensure
-        states are scaled properly.
-        Args:
-            agent: OnPolicy/OffPolicy subclass.
-        """
-        inputs = np.random.random((10, 10))
-        agent_kwargs = self.get_agent_kwargs(agent)
-        agent = agent(**agent_kwargs)
-        for scale_inputs in [True, False]:
-            agent.scale_inputs = scale_inputs
-            actual = agent.get_model_inputs(inputs)
-            expected = inputs
-            if scale_inputs:
-                expected = inputs / 255
-            assert np.isclose(actual, expected).all()
 
     def test_get_model_outputs(self, base_agent):
         """
