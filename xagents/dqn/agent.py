@@ -51,7 +51,7 @@ class DQN(OffPolicy):
         self.batch_indices = tf.range(
             self.buffers[0].batch_size * self.n_envs, dtype=tf.int64
         )[:, tf.newaxis]
-        self.tf_batch_dtypes = 5 * [tf.float32]
+        self.tf_batch_dtypes = [tf.float64, tf.int64, tf.float64, tf.bool, tf.float64]
 
     @staticmethod
     def get_action_indices(batch_indices, actions):

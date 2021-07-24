@@ -50,7 +50,13 @@ class ACER(A2C):
         self.importance_c = importance_c
         self.delta = delta
         self.trust_region = trust_region
-        self.tf_batch_dtypes = 5 * [tf.float32]
+        self.tf_batch_dtypes = [
+            tf.float64,
+            tf.float32,
+            tf.int32,
+            tf.float32,
+            tf.float32,
+        ]
         self.batch_shapes = [
             (self.n_envs * (self.n_steps + 1), *self.input_shape),
             (self.n_envs * self.n_steps),
@@ -151,10 +157,7 @@ class ACER(A2C):
         ) = super(ACER, self).get_batch()
         states.append(self.get_states())
         batch = [states, rewards, actions, dones[1:], actor_logits]
-        batch = [
-            np.asarray(item).swapaxes(0, 1)
-            for item in batch
-        ]
+        batch = [np.asarray(item).swapaxes(0, 1) for item in batch]
         self.store_batch(batch)
         return [item.reshape(-1, *item.shape[2:]) for item in batch]
 
