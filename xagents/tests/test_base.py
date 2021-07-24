@@ -705,9 +705,7 @@ class TestBase:
         models = create_models(xagents.agents[agent_id], envs[0], agent_id)
         agent_kwargs.update(models)
         if issubclass(agent, OffPolicy) or agent == ACER:
-            agent_kwargs['buffers'] = create_buffers(
-                agent_id, 1000, 32, len(envs), 0.99
-            )
+            agent_kwargs['buffers'] = create_buffers(agent_id, 1000, 32, len(envs))
         agent = agent(**agent_kwargs)
         video_dir = tmp_path / agent_id / 'video'
         frame_dir = tmp_path / agent_id / 'frames'

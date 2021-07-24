@@ -147,7 +147,7 @@ class DQN(OffPolicy):
             new_state_values,
         )
         target_values = tf.identity(q_states)
-        target_value_update = new_state_values * (self.gamma ** self.n_steps) + tf.cast(
+        target_value_update = new_state_values * self.gamma + tf.cast(
             rewards, tf.float32
         )
         indices = self.get_action_indices(self.batch_indices, actions)

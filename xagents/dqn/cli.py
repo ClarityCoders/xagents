@@ -26,10 +26,4 @@ cli_args = {
         'default': 1000,
         'hp_type': 'int',
     },
-    'n-steps': {
-        'help': 'Transition steps',
-        'type': int,
-        'default': 1,
-        'hp_type': 'categorical',
-    },
 }

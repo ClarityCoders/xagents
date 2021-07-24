@@ -68,12 +68,6 @@ off_policy_args = {
         'default': 32,
         'hp_type': 'categorical',
     },
-    'buffer-n-steps': {
-        'help': 'Replay buffer transition step',
-        'type': int,
-        'default': 1,
-        'hp_type': 'categorical',
-    },
 }
 
 agent_args = {
@@ -167,8 +161,12 @@ play_args = {
 }
 
 tune_args = {
-    'trial-steps': {'help': 'Maximum steps for a trial', 'type': int},
-    'n-trials': {'help': 'Number of trials to run', 'type': int},
+    'trial-steps': {
+        'help': 'Maximum steps for a trial',
+        'type': int,
+        'default': 500000,
+    },
+    'n-trials': {'help': 'Number of trials to run', 'type': int, 'default': 1},
     'study': {'help': 'Name of optuna study'},
     'storage': {'help': 'Database url'},
     'n-jobs': {'help': 'Parallel trials', 'type': int, 'default': 1},

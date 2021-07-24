@@ -91,9 +91,8 @@ def test_create_buffers(max_size, batch_size, n_envs, initial_size, as_total, ag
         max_size,
         batch_size,
         n_envs,
-        0.99,
-        initial_size=initial_size,
-        as_total=as_total,
+        initial_size,
+        as_total,
     )
     expected_sizes = expected_max_size, expected_initial_size, expected_batch_size
     actual_sizes = buffers[0].size, buffers[0].initial_size, buffers[0].batch_size

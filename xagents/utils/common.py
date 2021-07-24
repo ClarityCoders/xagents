@@ -470,8 +470,6 @@ def create_buffers(
     max_size,
     batch_size,
     n_envs,
-    gamma,
-    n_steps=1,
     initial_size=None,
     as_total=True,
 ):
@@ -483,8 +481,6 @@ def create_buffers(
         batch_size: Buffer batch size when get_sample() is called.
         n_envs: Number of environments which will result in an equal
             number of buffers.
-        gamma: Buffer discount factor (useful only if n_steps > 1)
-        n_steps: Buffer transition steps.
         initial_size: Buffer initial pre-training fill size.
         as_total: If False, total buffer initial, buffer max, and batch sizes
             are respectively buffer initial x n_envs, buffer max x n_envs,
@@ -514,8 +510,6 @@ def create_buffers(
         buffers = [
             ReplayBuffer1(
                 max_size,
-                n_steps,
-                gamma,
                 initial_size=initial_size,
                 batch_size=batch_size,
             )
@@ -569,8 +563,6 @@ def create_agent(agent_id, agent_kwargs, non_agent_kwargs, trial=None):
             non_agent_kwargs['buffer_max_size'],
             non_agent_kwargs['buffer_batch_size'],
             non_agent_kwargs['n_envs'],
-            agent_kwargs['gamma'],
-            non_agent_kwargs['buffer_n_steps'],
             non_agent_kwargs['buffer_initial_size'],
         )
         agent_kwargs['buffers'] = buffers

@@ -95,18 +95,6 @@ class TestBuffer1:
     Test ReplayBuffer1 methods.
     """
 
-    def test_reset_temp_history(self):
-        """
-        Test temp sub-buffer works properly.
-        """
-        self.buffer.temp_buffer.extend(self.observations)
-        state, action, reward, done, new_state = self.buffer.reset_temp_history()
-        assert (state == self.observations[0][0]).all()
-        assert action == self.observations[0][1]
-        assert done == self.observations[-1][3]
-        assert (new_state == self.observations[-1][-1]).all()
-        assert not self.buffer.temp_buffer
-
     @pytest.mark.parametrize(
         'args',
         [

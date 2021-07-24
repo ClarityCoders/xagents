@@ -61,7 +61,7 @@ class ReplayBuffer1(BaseBuffer):
     deque-based replay buffer that holds state transitions
     """
 
-    def __init__(self, size, n_steps=1, gamma=0.99, **kwargs):
+    def __init__(self, size, **kwargs):
         """
         Initialize replay buffer.
         Args:
@@ -71,28 +71,8 @@ class ReplayBuffer1(BaseBuffer):
             **kwargs: kwargs passed to BaseBuffer.
         """
         super(ReplayBuffer1, self).__init__(size, **kwargs)
-        self.n_steps = n_steps
-        self.gamma = gamma
         self.main_buffer = deque(maxlen=size)
         self.temp_buffer = []
-
-    def reset_temp_history(self):
-        """
-        Calculate start and end frames and clear temp buffer.
-
-        Returns:
-            state, action, reward, done, new_state
-        """
-        reward = 0
-        for exp in self.temp_buffer[::-1]:
-            reward *= self.gamma
-            reward += exp[2]
-        state = self.temp_buffer[0][0]
-        action = self.temp_buffer[0][1]
-        done = self.temp_buffer[-1][3]
-        new_state = self.temp_buffer[-1][-1]
-        self.temp_buffer.clear()
-        return state, action, reward, done, new_state
 
     def append(self, *args):
         """
@@ -103,14 +83,7 @@ class ReplayBuffer1(BaseBuffer):
         Returns:
             None
         """
-        if self.n_steps == 1:
-            self.main_buffer.append(args)
-        elif (self.temp_buffer and self.temp_buffer[-1][3]) or len(
-            self.temp_buffer
-        ) == self.n_steps:
-            adjusted_sample = self.reset_temp_history()
-            self.main_buffer.append(adjusted_sample)
-        self.temp_buffer.append(args)
+        self.main_buffer.append(args)
         self.current_size = len(self.main_buffer)
 
     def get_sample(self):
