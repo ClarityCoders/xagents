@@ -98,7 +98,7 @@ class BaseAgent(ABC):
         self.n_actions = None
         self.best_reward = -float('inf')
         self.mean_reward = -float('inf')
-        self.states = [None] * self.n_envs
+        self.states = [np.array(0)] * self.n_envs
         self.dones = [False] * self.n_envs
         self.steps = 0
         self.frame_speed = 0
@@ -113,6 +113,7 @@ class BaseAgent(ABC):
             self.set_seeds(seed)
         self.reset_envs()
         self.set_action_count()
+        self.img_inputs = len(self.states[0].shape) >= 2
         self.display_titles = (
             'time',
             'steps',
@@ -334,12 +335,17 @@ class BaseAgent(ABC):
                 buffer = self.buffers[i]
                 batch = buffer.get_sample()
                 batches.append(batch)
+            dtypes = (
+                self.batch_dtypes
+                if hasattr(self, 'batch_dtypes')
+                else [np.float32 for _ in range(len(batches[0]))]
+            )
             if len(batches) > 1:
                 return [
-                    np.concatenate(item)
-                    for item in zip(*batches)
+                    np.concatenate(item).astype(dtype)
+                    for (item, dtype) in zip(zip(*batches), dtypes)
                 ]
-            return batches[0]
+            return [item.astype(dtype) for (item, dtype) in zip(batches[0], dtypes)]
 
     def update_history(self, episode_reward):
         """
@@ -476,6 +482,8 @@ class BaseAgent(ABC):
             Outputs as a list in case of multiple models or any other shape
             that is expected from the given model(s).
         """
+        if self.img_inputs:
+            inputs = tf.cast(inputs, tf.float32) / 255.0
         if isinstance(models, tf.keras.models.Model):
             return models(inputs, training=training)
         elif len(models) == 1:

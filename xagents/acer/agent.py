@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from xagents import A2C
+from xagents.utils.common import LazyFrames
 
 
 class ACER(A2C):
@@ -50,13 +51,7 @@ class ACER(A2C):
         self.importance_c = importance_c
         self.delta = delta
         self.trust_region = trust_region
-        self.tf_batch_dtypes = [
-            tf.float64,
-            tf.float32,
-            tf.int32,
-            tf.float32,
-            tf.float32,
-        ]
+        self.batch_dtypes = ['uint8', 'float32', 'int32', 'float32', 'float32']
         self.batch_shapes = [
             (self.n_envs * (self.n_steps + 1), *self.input_shape),
             (self.n_envs * self.n_steps),
@@ -135,7 +130,10 @@ class ACER(A2C):
         for i in range(self.n_envs):
             env_outputs = []
             for item in batch:
-                env_outputs.append(item[i])
+                current = item[i]
+                if len(current.shape) > 2:
+                    current = LazyFrames(current.astype(np.uint8))
+                env_outputs.append(current)
             self.buffers[i].append(*env_outputs)
 
     def get_batch(self):
@@ -159,7 +157,10 @@ class ACER(A2C):
         batch = [states, rewards, actions, dones[1:], actor_logits]
         batch = [np.asarray(item).swapaxes(0, 1) for item in batch]
         self.store_batch(batch)
-        return [item.reshape(-1, *item.shape[2:]) for item in batch]
+        return [
+            item.reshape(-1, *item.shape[2:]).astype(dtype)
+            for (item, dtype) in zip(batch, self.batch_dtypes)
+        ]
 
     def calculate_returns(
         self,
@@ -362,7 +363,7 @@ class ACER(A2C):
         Returns:
             None
         """
-        batch = tf.numpy_function(self.get_batch, [], self.tf_batch_dtypes)
+        batch = tf.numpy_function(self.get_batch, [], self.batch_dtypes)
         self.buffer_current_size.assign_add(1)
         self.set_batch_shapes(batch)
         self.update_gradients(*batch)
@@ -374,7 +375,7 @@ class ACER(A2C):
                 batch = tf.numpy_function(
                     self.concat_buffer_samples,
                     [],
-                    self.tf_batch_dtypes,
+                    self.batch_dtypes,
                 )
                 self.set_batch_shapes(batch)
                 self.update_gradients(*batch)

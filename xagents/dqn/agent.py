@@ -51,7 +51,7 @@ class DQN(OffPolicy):
         self.batch_indices = tf.range(
             self.buffers[0].batch_size * self.n_envs, dtype=tf.int64
         )[:, tf.newaxis]
-        self.tf_batch_dtypes = [tf.float64, tf.int64, tf.float64, tf.bool, tf.float64]
+        self.batch_dtypes = ['uint8', 'int64', 'float64', 'bool', 'uint8']
 
     @staticmethod
     def get_action_indices(batch_indices, actions):
@@ -192,7 +192,7 @@ class DQN(OffPolicy):
         training_batch = tf.numpy_function(
             self.concat_buffer_samples,
             [],
-            self.tf_batch_dtypes,
+            self.batch_dtypes,
         )
         targets = self.get_targets(*training_batch)
         self.update_gradients(training_batch[0], targets)

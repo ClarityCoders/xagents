@@ -10,23 +10,20 @@ from xagents.utils.common import AtariWrapper, create_buffers, get_wandb_key
 
 
 @pytest.mark.parametrize(
-    'resize_shape, scale_frames',
-    [[[random.randint(50, 100)] * 2, random.choice([True, False])] for _ in range(5)],
+    'resize_shape',
+    [[random.randint(50, 100)] * 2 for _ in range(5)],
 )
-def test_atari_wrapper(resize_shape, scale_frames):
+def test_atari_wrapper(resize_shape):
     """
     Test atari frame preprocessing, ensure shape and values are as expected.
     Args:
         resize_shape: (m, n) output frame size.
-        scale_frames: If False, frames will not be scaled / normalized (divided by 255)
     """
     env = gym.make('PongNoFrameskip-v4')
-    env = AtariWrapper(env, resize_shape=resize_shape, scale_frames=scale_frames)
+    env = AtariWrapper(env, resize_shape=resize_shape)
     reset_state = env.reset()
     state, *_ = env.step(env.action_space.sample())
     assert state.shape == reset_state.shape == (*resize_shape, 1)
-    if scale_frames:
-        assert (state < 1).all() and (reset_state < 1).all()
 
 
 def test_get_wandb_key(tmp_path):

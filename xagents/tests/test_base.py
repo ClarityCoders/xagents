@@ -16,12 +16,8 @@ import xagents
 from xagents import A2C, ACER, DDPG, DQN, PPO, TD3, TRPO
 from xagents.base import BaseAgent, OffPolicy, OnPolicy
 from xagents.utils.buffers import ReplayBuffer1
-from xagents.utils.common import (
-    create_buffers,
-    create_models,
-    get_wandb_key,
-    write_from_dict,
-)
+from xagents.utils.common import (create_buffers, create_models, get_wandb_key,
+                                  write_from_dict)
 
 
 class DummyAgent(BaseAgent):
@@ -571,12 +567,16 @@ class TestBase:
         with pytest.raises(ValueError, match=r'Sample larger than population'):
             agent.concat_buffer_samples()
         seen = []
+        agent.batch_dtypes = ['float64', 'float16', 'float32', 'int16', 'int32']
         for i, buffer in enumerate(agent.buffers):
             observation = [[i], [i * 10], [i * 100], [i * 1000], [i * 10000]]
             seen.append(observation)
             buffer.append(*observation)
         expected = np.squeeze(np.array(seen)).T
         result = np.array(agent.concat_buffer_samples())
+        assert [
+            item.dtype for item in agent.concat_buffer_samples()
+        ] == agent.batch_dtypes
         assert (result == expected).all()
 
     @pytest.mark.parametrize(

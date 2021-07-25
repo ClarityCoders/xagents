@@ -83,7 +83,9 @@ class TD3(DDPG):
             new_actions = tf.clip_by_value(
                 self.target_actor(new_states) + noise, -1.0, 1.0
             )
-            target_critic_input = tf.concat([new_states, new_actions], 1)
+            target_critic_input = tf.concat(
+                [tf.cast(new_states, tf.float64), tf.cast(new_actions, tf.float64)], 1
+            )
             target_value1 = self.target_critic1(target_critic_input)
             target_value2 = self.target_critic2(target_critic_input)
             target_value = tf.minimum(target_value1, target_value2)

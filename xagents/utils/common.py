@@ -26,31 +26,29 @@ class LazyFrames:
         self.frames = frames
         self.out = None
         self.dtype = frames.dtype
+        self.shape = frames.shape
 
-    def _force(self):
+    def process_frame(self):
         if self.out is None:
-            self.out = np.concatenate(self.frames, axis=-1)
+            self.out = np.array(self.frames)
             self.frames = None
         return self.out
 
     def __array__(self, dtype=None):
-        out = self.force()
+        out = self.process_frame()
         if dtype is not None:
             out = out.astype(dtype)
         return out
 
     def __len__(self):
-        return len(self.force())
+        return len(self.process_frame())
 
     def __getitem__(self, i):
-        return self.force()[i]
+        return self.process_frame()[i]
 
     def count(self):
-        frames = self.force()
+        frames = self.process_frame()
         return frames.shape[frames.ndim - 1]
-
-    def frame(self, i):
-        return self.force()[..., i]
 
 
 class AtariWrapper(gym.Wrapper):
@@ -63,7 +61,6 @@ class AtariWrapper(gym.Wrapper):
         env,
         frame_skips=4,
         resize_shape=(84, 84),
-        scale_frames=True,
         max_frame=False,
     ):
         """
@@ -72,7 +69,6 @@ class AtariWrapper(gym.Wrapper):
             env: gym environment that returns states as atari frames.
             frame_skips: Number of frame skips to use per environment step.
             resize_shape: (m, n) output frame size.
-            scale_frames: If False, frames will not be scaled / normalized (divided by 255)
             max_frame: If True, max and skip is applied.
         """
         assert frame_skips > 1, 'frame_skips must be >= 1'
@@ -80,7 +76,6 @@ class AtariWrapper(gym.Wrapper):
         self.skips = frame_skips
         self.frame_shape = resize_shape
         self.observation_space.shape = (*resize_shape, 1)
-        self.scale_frames = scale_frames
         self.max_frame = max_frame
         self.frame_buffer = deque(maxlen=2)
 
@@ -95,9 +90,7 @@ class AtariWrapper(gym.Wrapper):
         """
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frame = cv2.resize(frame, self.frame_shape)
-        if self.scale_frames:
-            frame = frame / 255
-        return np.expand_dims(frame, -1)
+        return LazyFrames(np.expand_dims(frame, -1))
 
     def step(self, action):
         """

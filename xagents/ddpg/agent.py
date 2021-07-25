@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.losses import MSE
 
@@ -50,7 +49,7 @@ class DDPG(OffPolicy):
             (self.actor, self.target_actor),
             (self.critic, self.target_critic),
         ]
-        self.tf_batch_dtypes = 5 * [tf.float32]
+        self.batch_dtypes = 5 * ['float32']
 
     def get_step_actions(self):
         """
@@ -133,7 +132,7 @@ class DDPG(OffPolicy):
         """
         for gradient_step in range(int(gradient_steps)):
             states, actions, rewards, dones, new_states = tf.numpy_function(
-                self.concat_buffer_samples, [], self.tf_batch_dtypes
+                self.concat_buffer_samples, [], self.batch_dtypes
             )
             self.update_critic_weights(states, actions, new_states, dones, rewards)
             if gradient_step % self.policy_delay == 0:
@@ -151,7 +150,7 @@ class DDPG(OffPolicy):
         """
         step_actions = self.get_step_actions()
         *_, dones, _ = tf.numpy_function(
-            self.step_envs, [step_actions, True, True], self.tf_batch_dtypes
+            self.step_envs, [step_actions, True, True], self.batch_dtypes
         )
         for done_idx in tf.where(dones):
             gradient_steps = self.gradient_steps or self.episode_steps[done_idx[0]]
