@@ -46,7 +46,7 @@ class Objective:
 
     def set_trial_values(self, trial):
         """
-        Set values of all available hyper parameters that are specified
+        Set values of all available hyperparameters that are specified
         to be tuned.
         Args:
             trial: optuna.trial.Trial

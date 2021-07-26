@@ -545,7 +545,7 @@ def create_buffers(
 
 def create_agent(agent_id, agent_kwargs, non_agent_kwargs, trial=None):
     """
-    Test agent creation with all sub-components, including environments,
+    Create agent with all sub-components, including environments,
     models and buffers.
     Args:
         agent_id: str, one of the keys in xagents.agents

@@ -47,7 +47,7 @@ class Executor:
             section_frame[
                 [
                     column_name
-                    for column_name in ('help', 'required', 'default')
+                    for column_name in ('help', 'default', 'hp_type')
                     if column_name in section_frame.columns
                 ]
             ].to_markdown()

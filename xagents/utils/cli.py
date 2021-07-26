@@ -111,7 +111,8 @@ agent_args = {
         'type': int,
     },
     'quiet': {
-        'help': 'If specified, further actions will be non-verbose',
+        'help': 'If specified, no messages by the agent will be displayed'
+        '\nto the console',
         'action': 'store_true',
     },
 }

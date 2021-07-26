@@ -6,32 +6,51 @@
   performant reinforcement learning algorithms in tf2</h3>
   </p>
 
-* [Installation](#installation)
-* [Description](#description)
-* [Features](#features)
-* [Usage](#usage)
-  * [Training](#training)
-  * [Playing](#playing)
-* [Command line options](#command-line-options)
-* [Algorithms](#algorithms)
-  * [A2C](#a2c)
-  * [ACER](#acer)
-  * [DDPG](#ddpg)
-  * [DQN / DDQN](#dqn-ddqn)
-  * [PPO](#ppo)
-  * [TD3](#td3)
-  * [TRPO](#trpo)
-* [License](#license)
-* [Show your support](#show-your-support)
-* [Contact](#contact)
+* [Installation](#1-installation)
+* [Description](#2-description)
+* [Features](#3-features)
+  * [Tensorflow 2](#tensorflow-2x)
+  * [wandb support](#wandb-support)
+  * [Multiple environments (All agents)](#multiple-environments)
+  * [Multiple memory-optimized replay buffers](#multiple-memory-optimized-replay-buffers)
+  * [Command line options](#command-line-options)
+  * [Intuitive hyperparameter tuning from cli](#intuitive-hyperparameter-tuning-from-cli)
+  * [Early stopping / reduce on plateau](#early-stopping--reduce-on-plateau)
+  * [Discrete and continuous action spaces](#discrete-and-continuous-action-spaces)
+  * [Unit tests](#unit-tests)
+  * [Models are loaded from .cfg files](#models-are-loaded-from-cfg-files)
+  * [Training history checkpoints](#training-history-checkpoints)
+  * [Reproducible results](#reproducible-results)
+  * [Gameplay output to .jpg frames or .mp4 vid](#gameplay-output-to-jpg-frames-or-mp4-vid)
+* [Usage](#4-usage)
+  * [Training](#41-training)
+  * [Playing](#42-playing)
+  * [Tuning](#43-tuning)
+* [Command line options](#5-command-line-options)
+  * [Agent](#51-agent)
+  * [General](#52-general)
+  * [Training](#53-training)
+  * [Playing](#54-playing)
+  * [Tuning](#55-tuning)
+* [Algorithms](#6-algorithms)
+  * [A2C](#61-a2c)
+  * [ACER](#62-acer)
+  * [DDPG](#63-ddpg)
+  * [DQN / DDQN](#64-dqn-ddqn)
+  * [PPO](#65-ppo)
+  * [TD3](#66-td3)
+  * [TRPO](#67-trpo)
+* [License](#7-license)
+* [Show your support](#8-show-your-support)
+* [Contact](#9-contact)
 
-![pong](/gifs/pong.gif)
-![breakout](/gifs/breakout.gif)
+![pong](/img/pong.gif)
+![breakout](/img/breakout.gif)
 
-![bipedal-walker](/gifs/bipedal-walker.gif)
+![bipedal-walker](/img/bipedal-walker.gif)
 
 
-### **Installation**
+### **1. Installation**
 ___
 
 ```sh
@@ -41,16 +60,16 @@ pip install .
 ```
 
 **Notes:** 
-* To be able to run atari environments, follow the instructions in [atari-py](https://github.com/openai/atari-py#roms)
+* To be able to use atari environments, follow the instructions in [atari-py](https://github.com/openai/atari-py#roms)
 to install [ROMS](http://www.atarimania.com/rom_collection_archive_atari_2600_roms.html).
   
-* To be able to run the tests remotely, [pytest-xvfb](https://pypi.org/project/pytest-xvfb/) plugin will
+* To be able to run the tests, [pytest-xvfb](https://pypi.org/project/pytest-xvfb/) plugin will
 be automatically installed but will require an additional step ...
-  * For macOS users, you'll have to install [Xquartz](https://www.xquartz.org)
+  * For macOS users:
     ```shell 
     brew install xquartz
     ```
-  * For linux users, you'll have to install [xvfb](https://www.x.org/releases/X11R7.6/doc/man/man1/Xvfb.1.xhtml)
+  * For linux users:
     ```shell
     sudo apt-get install -y xvfb
     ```
@@ -63,7 +82,7 @@ xagents
 
 **OUT:**
 
-xagents 1.0
+    xagents 1.0
 
     Usage:
         xagents <command> <agent> [options] [args]
@@ -71,9 +90,13 @@ xagents 1.0
     Available commands:
         train      Train given an agent and environment
         play       Play a game given a trained agent and environment
+        tune       Tune hyperparameters given an agent, hyperparameter specs, and environment
+    
+    Use xagents <command> to see more info about a command
+    Use xagents <command> <agent> to see more info about command + agent
 
 <!-- DESCRIPTION -->
-## **Description**
+## **2. Description**
 ___
 xagents is a tensorflow based mini-library which facilitates experimentation with
 existing reinforcement learning algorithms, as well as the implementation of new ones. It
@@ -81,26 +104,84 @@ provides well tested components that can be easily modified or extended. The ava
 selection of algorithms can be used directly or through command line.
 
 <!-- FEATURES -->
-## **Features**
+## **3. Features**
 
-* Tensorflow 2.
-* wandb support.
-* Multiple environments (All agents).
-* Command line options.
-* Hyperparameter auto-tuning.
-* Early stopping, reduce on plateau.
-* Resume training and update metrics from last checkpoint.
-* Discrete and continuous action spaces.
-* Unit tests.
-* Models are loaded from .cfg files.
-* Training history checkpoints.
-* Single / multiple training history visualization.
-* Reproducible results.
-* Gameplay output to .jpg frames or .mp4 vid.
+### **Tensorflow 2.x**
 
-## **Usage**
+* All available agents are based on tensorflow 2.x.
+* High performance training loops executed in graph mode.
+* Keras models.
 
-All agents are available through the command line.
+### **wandb support**
+
+Visualization of the training is supported, as well as many other awesome features provided by [wandb](https://wandb.ai/site).
+
+![wandb-agents](/img/wandb-agents.png)
+
+### **Multiple environments**
+
+All agents support multiple environments, which operations are conducted
+in tensorflow graph. This boosts training speed without the overhead of creating
+a process per environment. Atari and environments that return images, 
+are wrapped in `LazyFrames` which significantly lower memory usage.
+
+### **Multiple memory-optimized replay buffers**
+
+There are 2 kinds of replay buffers available:
+ * ReplayBuffer1 which is deque-based (DQN, ACER).
+ * ReplayBuffer2 which is numpy-based (DDPG, TD3).
+
+Both support max size and initial size, and are usually
+combined with `LazyFrames` for memory optimality.
+
+### **Command line options**
+
+All features are available through the command line. For more command line info,
+check [command line options](#5-command-line-options)
+
+### **Intuitive hyperparameter tuning from cli**
+
+Command line tuning interface based on [optuna](https://optuna.org), which provides 
+many hyperparameter features and types. 3 types are currently used by xagents:
+
+* **Categorical**:
+  
+      xagents tune <agent> --env <env> --interesting-param <val1> <val2> <val3> # ...
+
+* **Int / log uniform**:
+
+      xagents tune <agent> --env <env> --interesting-param <min-val> <max-val>
+
+And in both examples if `--interesting-param` is not specified, it will have the default value, 
+or a fixed value, if only 1 value is specified. Also, some nice visualization options using 
+[optuna.visualization.matplotlib](https://optuna.readthedocs.io/en/latest/reference/visualization/matplotlib.html):
+
+![param-importances](/img/param-importances.jpg)
+
+### **Early stopping / reduce on plateau.**
+
+Early train stopping usually when plateau is reached for a pre-specified
+n number of times without any improvement. Learning rate is
+reduced by some pre-determined factor. To activate these features: 
+
+    --divergence-monitoring-steps <train-steps-at-which-should-monitor>
+
+### **Discrete and continuous action spaces**
+
+|            | a2c   | acer   | ddpg   | dqn   | ppo   | td3   | trpo   |
+|:-----------|:------|:-------|:-------|:------|:------|:------|:-------|
+| discrete   | yes   | yes    | no     | yes   | yes   | no    | yes    |
+| continuous | yes   | no     | yes    | no    | yes   | yes   | yes    |
+
+### **Unit tests**
+### **Models are loaded from .cfg files**
+### **Training history checkpoints**
+### **Reproducible results**
+### **Gameplay output to .jpg frames or .mp4 vid**
+
+## **4. Usage**
+
+All agents/commands are available through the command line.
 
     xagents <command> <agent> [options] [args]
 
@@ -108,7 +189,7 @@ All agents are available through the command line.
 all models passed to agents in code, should be loaded with weights 
 beforehand, if called for resuming training or playing.
 
-### **Training**
+### **4.1. Training**
 
 **Through command line**
 
@@ -134,12 +215,11 @@ Then either `max_steps` or `target_reward` should be specified to start training
     
     agent.fit(target_reward=19)
 
-### **Playing**
+### **4.2. Playing**
 
 **Through command line**
 
     xagents play a2c --env PongNoFrameskip-v4 --preprocess --weights <trained-a2c-weights> --render
-
 
 **Through direct importing**
 
@@ -180,11 +260,132 @@ or
 
 and all arguments can be combined `--video-dir <vid-dir> --frame-dir <frame-dir> --render`
 
+### **4.3. Tuning**
+
+**Notes**
+
+* Due to an [issue](https://github.com/tensorflow/tensorflow/issues/50765) with tensorflow
+  that causes occasional memory leaks, if trials are run consecutively using:
+  
+      study.optimize(objective, n_trials=100)
+  
+  The current implementation runs trials in separate processes that are killed after each trial,
+  to release the resources. Therefore, you may find the suggested non-command line
+  example different from optuna's [docs](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.study.Study.html#optuna.study.Study.optimize).
+* There are hyperparameters that accept min and max values, and others that support n values.
+  To know which is what, check the `hp_type` in the help menu table. `categorical` takes
+  any number of values, otherwise min and max.
+* For more info about how the optimization algorithms work under the hood, you may want to 
+check optuna [docs](https://optuna.readthedocs.io/en/stable/).
+* Tuning from later stages of the training is available by passing.
+* Only the hyperparameters selected are tuned, the rest will keep the default values
+and will not be tuned or can have a single fixed value `--flag <val>`
+  
+      --weights /path/to/respective/agent/trained-weights.tf
+
+  which will load the trained weights and starts optimizing from there.
+* Also, due to tensorflow issue mentioned above, tensorflow logging is silenced
+using `TF_CPP_MIN_LOG_LEVEL` environment variable to prevent each trial process 
+from displaying the same import log messages over and over.
+
+**Through command line**
+
+    !TF_CPP_MIN_LOG_LEVEL=3 xagents tune ppo --env PongNoFrameskip-v4 --study ppo-carnival --storage sqlite:///ppo-carnival.db --trial-steps 500000 --n-trials 100 --warmup-trials 3 --preprocess --n-envs 16 32 --lr 1e-5 1e-2 --opt-epsilon 1e-7 1e-4 --gamma 0.9 0.999 --entropy-coef 0.01 0.2 --n-steps 16 32 64 128 --lam 0.7 0.99
+
+**Through direct importing**
+
+    import os
+    
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    
+    import numpy as np
+    import optuna
+    import tensorflow as tf
+    from tensorflow.keras.optimizers import Adam
+    
+    import xagents
+    from xagents import PPO
+    from xagents.utils.common import ModelReader, create_envs
+    
+    
+    def get_hparams(trial):
+        return {
+            'n_steps': int(
+                trial.suggest_categorical('n_steps', [2 ** i for i in range(2, 11)])
+            ),
+            'learning_rate': trial.suggest_loguniform('learning_rate', 1e-5, 1e-2),
+            'epsilon': trial.suggest_loguniform('epsilon', 1e-7, 1e-1),
+            'entropy_coef': trial.suggest_loguniform('entropy_coef', 1e-8, 2e-1),
+            'n_envs': int(
+                trial.suggest_categorical('n_envs', [2 ** i for i in range(4, 7)])
+            ),
+            'grad_norm': trial.suggest_uniform('grad_norm', 0.1, 10.0),
+            'lam': trial.suggest_loguniform('lam', 0.65, 0.99),
+            'clip_norm': trial.suggest_loguniform('clip_norm', 0.01, 10),
+        }
+    
+    
+    def optimize_agent(trial):
+        hparams = get_hparams(trial)
+        envs = create_envs('BreakoutNoFrameskip-v4', hparams['n_envs'])
+        optimizer = Adam(
+            hparams['learning_rate'],
+            epsilon=hparams['epsilon'],
+        )
+        model_cfg = xagents.agents['ppo']['model']['cnn'][0]
+        model = ModelReader(
+            model_cfg,
+            output_units=[envs[0].action_space.n, 1],
+            input_shape=envs[0].observation_space.shape,
+            optimizer=optimizer,
+        ).build_model()
+        model.compile(optimizer)
+        agent = PPO(
+            envs,
+            model,
+            entropy_coef=hparams['entropy_coef'],
+            grad_norm=hparams['grad_norm'],
+            n_steps=hparams['n_steps'],
+            lam=hparams['lam'],
+            clip_norm=hparams['clip_norm'],
+            trial=trial,
+            quiet=True,
+        )
+        steps = 500000
+        agent.fit(max_steps=steps)
+        current_rewards = np.around(np.mean(agent.total_rewards), 2)
+        if not np.isfinite(current_rewards):
+            current_rewards = 0
+        return current_rewards
+    
+    
+    def run_trial():
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
+        tf.get_logger().setLevel('ERROR')
+        study = optuna.create_study(
+            study_name='ppo-example',
+            storage='sqlite:///ppo-example.db',
+            load_if_exists=True,
+            direction='maximize',
+        )
+        optuna.logging.set_verbosity(optuna.logging.INFO)
+        study.optimize(optimize_agent, n_trials=1)
+    
+    
+    if __name__ == '__main__':
+        for _ in range(100):
+            with ProcessPoolExecutor(1) as executor:
+                future_trials = [executor.submit(run_trial)]
+                for future_trial in as_completed(future_trials):
+                    future_trial.result()
+
+
 <!-- COMMAND LINE OPTIONS -->
-## **Command line options**
+## **5. Command line options**
 
 **Note:** Not all the flags listed below are available at once, and to know which 
-ones are available respective to the command you passed, you can use:
+ones are, respective to the command you passed, you can use:
 
     xagents <command>
 
@@ -196,36 +397,85 @@ which should list command + agent options combined
 
 **Flags (Available for all agents)**
 
-| flags                         | help                                                                         | required   | default   |
-|:------------------------------|:-----------------------------------------------------------------------------|:-----------|:----------|
-| --env                         | gym environment id                                                           | True       | -         |
-| --n-envs                      | Number of environments to create                                             | -          | 1         |
-| --preprocess                  | If specified, states will be treated as atari frames                         | -          | -         |
-|                               | and preprocessed accordingly                                                 |            |           |
-| --lr                          | Learning rate passed to a tensorflow.keras.optimizers.Optimizer              | -          | 0.0007    |
-| --opt-epsilon                 | Epsilon passed to a tensorflow.keras.optimizers.Optimizer                    | -          | 1e-07     |
-| --beta1                       | Beta1 passed to a tensorflow.keras.optimizers.Optimizer                      | -          | 0.9       |
-| --beta2                       | Beta2 passed to a tensorflow.keras.optimizers.Optimizer                      | -          | 0.999     |
-| --weights                     | Path(s) to model(s) weight(s) to be loaded by agent output_models            | -          | -         |
-| --max-frame                   | If specified, max & skip will be applied during preprocessing                | -          | -         |
-| --reward-buffer-size          | Size of the total reward buffer, used for calculating                        | -          | 100       |
-|                               | mean reward value to be displayed.                                           |            |           |
-| --gamma                       | Discount factor                                                              | -          | 0.99      |
-| --display-precision           | Number of decimals to be displayed                                           | -          | 2         |
-| --seed                        | Random seed                                                                  | -          | -         |
-| --log-frequency               | Log progress every n games                                                   | -          | -         |
-| --checkpoints                 | Path(s) to new model(s) to which checkpoint(s) will be saved during training | -          | -         |
-| --history-checkpoint          | Path to .parquet file to save training history                               | -          | -         |
-| --plateau-reduce-factor       | Factor multiplied by current learning rate when there is a plateau           | -          | 0.9       |
-| --plateau-reduce-patience     | Minimum non-improvements to reduce lr                                        | -          | 10        |
-| --early-stop-patience         | Minimum plateau reduces to stop training                                     | -          | 3         |
-| --divergence-monitoring-steps | Steps after which, plateau and early stopping are active                     | -          | 500000    |
-| --target-reward               | Target reward when reached, training is stopped                              | -          | -         |
-| --max-steps                   | Maximum number of environment steps, when reached, training is stopped       | -          | -         |
-| --monitor-session             | Wandb session name                                                           | -          | -         |
+###**5.1. Agent**
+
+  | flags                         | help                                                                         | default   | hp_type     |
+  |:------------------------------|:-----------------------------------------------------------------------------|:----------|:------------|
+  | --checkpoints                 | Path(s) to new model(s) to which checkpoint(s) will be saved during training | -         | -           |
+  | --display-precision           | Number of decimals to be displayed                                           | 2         | -           |
+  | --divergence-monitoring-steps | Steps after which, plateau and early stopping are active                     | -         | -           |
+  | --early-stop-patience         | Minimum plateau reduces to stop training                                     | 3         | -           |
+  | --gamma                       | Discount factor                                                              | 0.99      | log_uniform |
+  | --history-checkpoint          | Path to .parquet file to save training history                               | -         | -           |
+  | --log-frequency               | Log progress every n games                                                   | -         | -           |
+  | --plateau-reduce-factor       | Factor multiplied by current learning rate when there is a plateau           | 0.9       | -           |
+  | --plateau-reduce-patience     | Minimum non-improvements to reduce lr                                        | 10        | -           |
+  | --quiet                       | If specified, no messages by the agent will be displayed                     | -         | -           |
+  |                               | to the console                                                               |           |             |
+  | --reward-buffer-size          | Size of the total reward buffer, used for calculating                        | 100       | -           |
+  |                               | mean reward value to be displayed.                                           |           |             |
+  | --seed                        | Random seed                                                                  | -         | -           |
+
+###**5.2. General**
+
+  | flags         | help                                                              | default   | hp_type     |
+  |:--------------|:------------------------------------------------------------------|:----------|:------------|
+  | --beta1       | Beta1 passed to a tensorflow.keras.optimizers.Optimizer           | 0.9       | log_uniform |
+  | --beta2       | Beta2 passed to a tensorflow.keras.optimizers.Optimizer           | 0.999     | log_uniform |
+  | --env         | gym environment id                                                | -         | -           |
+  | --lr          | Learning rate passed to a tensorflow.keras.optimizers.Optimizer   | 0.0007    | log_uniform |
+  | --max-frame   | If specified, max & skip will be applied during preprocessing     | -         | categorical |
+  | --n-envs      | Number of environments to create                                  | 1         | categorical |
+  | --opt-epsilon | Epsilon passed to a tensorflow.keras.optimizers.Optimizer         | 1e-07     | log_uniform |
+  | --preprocess  | If specified, states will be treated as atari frames              | -         | -           |
+  |               | and preprocessed accordingly                                      |           |             |
+  | --weights     | Path(s) to model(s) weight(s) to be loaded by agent output_models | -         | -           |
+
+###**5.3. Training**
+
+**On policy**
+
+  | flags             | help                                                                   |
+  |:------------------|:-----------------------------------------------------------------------|
+  | --max-steps       | Maximum number of environment steps, when reached, training is stopped |
+  | --monitor-session | Wandb session name                                                     |
+  | --target-reward   | Target reward when reached, training is stopped                        |
+
+###**5.4. Playing**
+
+  | flags             | help                                                     | default   |
+  |:------------------|:---------------------------------------------------------|:----------|
+  | --action-idx      | Index of action output by agent.model                    | 0         |
+  | --frame-delay     | Delay between rendered frames                            | 0         |
+  | --frame-dir       | Path to directory to save game frames                    | -         |
+  | --frame-frequency | If --frame-dir is specified, save frames every n frames. | 1         |
+  | --render          | If specified, the gameplay will be rendered              | -         |
+  | --video-dir       | Path to directory to save the resulting gameplay video   | -         |
+
+###**5.5. Tuning**
+
+  | flags           | help                                                            | default   |
+  |:----------------|:----------------------------------------------------------------|:----------|
+  | --n-jobs        | Parallel trials                                                 | 1         |
+  | --n-trials      | Number of trials to run                                         | 1         |
+  | --non-silent    | tensorflow, optuna and agent are silenced at trial start        | -         |
+  |                 | to avoid repetitive import messages at each trial start, unless |           |
+  |                 | this flag is specified                                          |           |
+  | --storage       | Database url                                                    | -         |
+  | --study         | Name of optuna study                                            | -         |
+  | --trial-steps   | Maximum steps for a trial                                       | 500000    |
+  | --warmup-trials | warmup trials before pruning starts                             | 5         |
+
+###**5.6. Off-policy (available to off-policy agents only)**
+
+  | flags                 | help                       | default   | hp_type     |
+  |:----------------------|:---------------------------|:----------|:------------|
+  | --buffer-batch-size   | Replay buffer batch size   | 32        | categorical |
+  | --buffer-initial-size | Replay buffer initial size | -         | int         |
+  | --buffer-max-size     | Maximum replay buffer size | 10000     | int         |
 
 <!-- ALGORITHMS -->
-## **Algorithms**
+## **6. Algorithms**
 
 **General notes**
 
@@ -244,26 +494,26 @@ be specified for the model(s) to be saved. The number of passed checkpoints shou
 and same goes for the weights, they should match the number of agent models.
 * For using a random seed, a `seed=some_seed` should be passed to agent constructor and ModelReader constructor if
 specified from code. If from the command line, all you need is to pass `--seed <some-seed>`
-* To save training history `history_checkpoint=some_history.parquet` should be specified
+* To save training history, `history_checkpoint=some_history.parquet` should be specified
 to agent constructor or alternatively using `--history-checkpoint <some-history.parquet>`. 
   If the history checkpoint exists, training metrics will automatically start from where it left.
   
-### *A2C*
+### *6.1. A2C*
 
 * *Number of models:* 1
 * *Action spaces:* discrete and continuous
 
-| flags             | help                                                 | default   |
-|:------------------|:-----------------------------------------------------|:----------|
-| --model           | Path to model .cfg file                              | -         |
-| --entropy-coef    | Entropy coefficient for loss calculation             | 0.01      |
-| --value-loss-coef | Value loss coefficient for value loss calculation    | 0.5       |
-| --grad-norm       | Gradient clipping value passed to tf.clip_by_value() | 0.5       |
-| --n-steps         | Transition steps                                     | 5         |
+| flags             | help                                                 | default   | hp_type     |
+|:------------------|:-----------------------------------------------------|:----------|:------------|
+| --entropy-coef    | Entropy coefficient for loss calculation             | 0.01      | log_uniform |
+| --grad-norm       | Gradient clipping value passed to tf.clip_by_value() | 0.5       | log_uniform |
+| --model           | Path to model .cfg file                              | -         | -           |
+| --n-steps         | Transition steps                                     | 5         | categorical |
+| --value-loss-coef | Value loss coefficient for value loss calculation    | 0.5       | log_uniform |
 
 **Command line**
 
-     xagents train a2c --env PongNoFrameskip-v4 --target-reward 19 --n-envs 16 --preprocess --checkpoints a2c-pong.tf --opt-epsilon 1e-5 --beta1 0 beta2 0.99
+     xagents train a2c --env PongNoFrameskip-v4 --target-reward 19 --n-envs 16 --preprocess --checkpoints a2c-pong.tf
 
 OR
 
@@ -279,7 +529,7 @@ OR
     
     envs = create_envs('PongNoFrameskip-v4', 16)
     model_cfg = xagents.agents['a2c']['model']['cnn'][0]
-    optimizer = Adam(learning_rate=7e-4, epsilon=1e-5, beta_1=0, beta_2=0.99)
+    optimizer = Adam(learning_rate=7e-4)
     model = ModelReader(
         model_cfg,
         output_units=[envs[0].action_space.n, 1],
@@ -291,33 +541,31 @@ OR
 
 And for `BipedalWalker-v3`, the only difference is that you have to specify `preprocess=False` to `create_envs()`
 
-### *ACER*
+### *6.2. ACER*
 
 * *Number of models:* 1
 * *Action spaces:* discrete
+* Due to implementation details, buffer batch size for ACER is `n-steps`.
+  Therefore `buffer-batch-size` is set to 1.
 
-| flags                 | help                                                               | default   |
-|:----------------------|:-------------------------------------------------------------------|:----------|
-| --model               | Path to model .cfg file                                            | -         |
-| --entropy-coef        | Entropy coefficient for loss calculation                           | 0.01      |
-| --value-loss-coef     | Value loss coefficient for value loss calculation                  | 0.5       |
-| --grad-norm           | Gradient clipping value passed to tf.clip_by_value()               | 10        |
-| --n-steps             | Transition steps                                                   | 20        |
-| --ema-alpha           | Moving average decay passed to tf.train.ExponentialMovingAverage() | 0.99      |
-| --replay-ratio        | Lam value passed to np.random.poisson()                            | 4         |
-| --epsilon             | epsilon used in gradient updates                                   | 1e-06     |
-| --importance-c        | Importance weight truncation parameter.                            | 10.0      |
-| --delta               | delta param used for trust region update                           | 1         |
-| --trust-region        | True by default, if this flag is specified,                        | -         |
-|                       | trust region updates will be used                                  |           |
-| --buffer-max-size     | Maximum replay buffer size                                         | 10000     |
-| --buffer-initial-size | Replay buffer initial size                                         | -         |
-| --buffer-batch-size   | Replay buffer batch size                                           | 32        |
-| --buffer-n-steps      | Replay buffer transition step                                      | 1         |
+| flags             | help                                                               | default   | hp_type     |
+|:------------------|:-------------------------------------------------------------------|:----------|:------------|
+| --delta           | delta param used for trust region update                           | 1         | log_uniform |
+| --ema-alpha       | Moving average decay passed to tf.train.ExponentialMovingAverage() | 0.99      | log_uniform |
+| --entropy-coef    | Entropy coefficient for loss calculation                           | 0.01      | log_uniform |
+| --epsilon         | epsilon used in gradient updates                                   | 1e-06     | log_uniform |
+| --grad-norm       | Gradient clipping value passed to tf.clip_by_value()               | 10        | log_uniform |
+| --importance-c    | Importance weight truncation parameter.                            | 10.0      | log_uniform |
+| --model           | Path to model .cfg file                                            | -         | -           |
+| --n-steps         | Transition steps                                                   | 20        | categorical |
+| --replay-ratio    | Lam value passed to np.random.poisson()                            | 4         | categorical |
+| --trust-region    | True by default, if this flag is specified,                        | -         | -           |
+|                   | trust region updates will be used                                  |           |             |
+| --value-loss-coef | Value loss coefficient for value loss calculation                  | 0.5       | log_uniform |
 
 **Command line**
 
-    xagents train acer --env PongNoFrameskip-v4 --target-reward 19 --n-envs 16 --preprocess --checkpoints acer-pong.tf --buffer-max-size 5000 --buffer-initial-size 500 --buffer-batch-size 16 --trust-region
+    xagents train acer --env PongNoFrameskip-v4 --target-reward 19 --n-envs 16 --preprocess --checkpoints acer-pong.tf --buffer-max-size 5000 --buffer-initial-size 500 --trust-region
 
 **Non-command line**
 
@@ -343,22 +591,20 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
     agent = ACER(envs, model, buffers, checkpoints=['acer-pong.tf'])
     agent.fit(target_reward=19)
 
-### *DDPG*
+### *6.3. DDPG*
 
 * *Number of models:* 2
 * *Action spaces:* continuous
+* FPS varies because a different number of updates is executed at each train step, 
+  unless `--gradient-steps` is specified.
 
-| flags                 | help                                                     | default   |
-|:----------------------|:---------------------------------------------------------|:----------|
-| --actor-model         | Path to actor model .cfg file                            | -         |
-| --critic-model        | Path to critic model .cfg file                           | -         |
-| --gradient-steps      | Number of iterations per train step                      | -         |
-| --tau                 | Value used for syncing target model weights              | 0.005     |
-| --step-noise-coef     | Coefficient multiplied by noise added to actions to step | 0.1       |
-| --buffer-max-size     | Maximum replay buffer size                               | 10000     |
-| --buffer-initial-size | Replay buffer initial size                               | -         |
-| --buffer-batch-size   | Replay buffer batch size                                 | 32        |
-| --buffer-n-steps      | Replay buffer transition step                            | 1         |
+| flags             | help                                                     | default   | hp_type     |
+|:------------------|:---------------------------------------------------------|:----------|:------------|
+| --actor-model     | Path to actor model .cfg file                            | -         | -           |
+| --critic-model    | Path to critic model .cfg file                           | -         | -           |
+| --gradient-steps  | Number of iterations per train step                      | -         | int         |
+| --step-noise-coef | Coefficient multiplied by noise added to actions to step | 0.1       | log_uniform |
+| --tau             | Value used for syncing target model weights              | 0.005     | log_uniform |
 
 **Command line**
 
@@ -402,25 +648,20 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
     )
     agent.fit(target_reward=100)
 
-### *DQN-DDQN*
+### *6.4. DQN-DDQN*
 
 * *Number of models:* 1
 * *Action spaces:* discrete
 
-| flags                 | help                                                                    | default   |
-|:----------------------|:------------------------------------------------------------------------|:----------|
-| --model               | Path to model .cfg file                                                 | -         |
-| --double              | If specified, DDQN will be used                                         | -         |
-| --epsilon-start       | Starting epsilon value which is used to control random exploration.     | 1.0       |
-|                       | It should be decremented and adjusted according to implementation needs |           |
-| --epsilon-end         | Epsilon end value (minimum exploration rate)                            | 0.02      |
-| --epsilon-decay-steps | Number of steps for `epsilon-start` to reach `epsilon-end`              | 150000    |
-| --target-sync-steps   | Sync target models every n steps                                        | 1000      |
-| --n-steps             | Transition steps                                                        | 1         |
-| --buffer-max-size     | Maximum replay buffer size                                              | 10000     |
-| --buffer-initial-size | Replay buffer initial size                                              | -         |
-| --buffer-batch-size   | Replay buffer batch size                                                | 32        |
-| --buffer-n-steps      | Replay buffer transition step                                           | 1         |
+| flags                 | help                                                                    | default   | hp_type     |
+|:----------------------|:------------------------------------------------------------------------|:----------|:------------|
+| --double              | If specified, DDQN will be used                                         | -         | -           |
+| --epsilon-decay-steps | Number of steps for `epsilon-start` to reach `epsilon-end`              | 150000    | int         |
+| --epsilon-end         | Epsilon end value (minimum exploration rate)                            | 0.02      | log_uniform |
+| --epsilon-start       | Starting epsilon value which is used to control random exploration.     | 1.0       | log_uniform |
+|                       | It should be decremented and adjusted according to implementation needs |           |             |
+| --model               | Path to model .cfg file                                                 | -         | -           |
+| --target-sync-steps   | Sync target models every n steps                                        | 1000      | int         |
 
 **Command line**
 
@@ -452,23 +693,23 @@ And for `BipedalWalker-v3`, the only difference is that you have to specify `pre
 
 **Note:** if you need a DDQN, specify `double=True` to the agent constructor or `--double`
 
-### *PPO*
+### *6.5. PPO*
 
 * *Number of models:* 1
 * *Action spaces:* discrete, continuous
 
-| flags               | help                                                 | default   |
-|:--------------------|:-----------------------------------------------------|:----------|
-| --model             | Path to model .cfg file                              | -         |
-| --entropy-coef      | Entropy coefficient for loss calculation             | 0.01      |
-| --value-loss-coef   | Value loss coefficient for value loss calculation    | 0.5       |
-| --grad-norm         | Gradient clipping value passed to tf.clip_by_value() | 0.5       |
-| --n-steps           | Transition steps                                     | 128       |
-| --lam               | GAE-Lambda for advantage estimation                  | 0.95      |
-| --ppo-epochs        | Gradient updates per training step                   | 4         |
-| --mini-batches      | Number of mini-batches to use per update             | 4         |
-| --advantage-epsilon | Value added to estimated advantage                   | 1e-08     |
-| --clip-norm         | Clipping value passed to tf.clip_by_value()          | 0.1       |
+| flags               | help                                                 | default   | hp_type     |
+|:--------------------|:-----------------------------------------------------|:----------|:------------|
+| --advantage-epsilon | Value added to estimated advantage                   | 1e-08     | log_uniform |
+| --clip-norm         | Clipping value passed to tf.clip_by_value()          | 0.1       | log_uniform |
+| --entropy-coef      | Entropy coefficient for loss calculation             | 0.01      | log_uniform |
+| --grad-norm         | Gradient clipping value passed to tf.clip_by_value() | 0.5       | log_uniform |
+| --lam               | GAE-Lambda for advantage estimation                  | 0.95      | log_uniform |
+| --mini-batches      | Number of mini-batches to use per update             | 4         | categorical |
+| --model             | Path to model .cfg file                              | -         | -           |
+| --n-steps           | Transition steps                                     | 128       | categorical |
+| --ppo-epochs        | Gradient updates per training step                   | 4         | categorical |
+| --value-loss-coef   | Value loss coefficient for value loss calculation    | 0.5       | log_uniform |
 
 **Command line**
 
@@ -498,25 +739,25 @@ or
     agent = PPO(envs, model, checkpoints=['ppo-pong.tf'])
     agent.fit(target_reward=19)
 
-### *TD3*
+### *6.6. TD3*
 
 * *Number of models:* 3
 * *Action spaces:* continuous
+* TD3 constructor accepts only 2 models as input but accepts 3 for checkpoints or weights, 
+because the second critic network will be cloned at runtime.
+* FPS varies because a different number of updates is executed at each train step, 
+  unless `--gradient-steps` is specified.
 
-| flags                 | help                                                               | default   |
-|:----------------------|:-------------------------------------------------------------------|:----------|
-| --actor-model         | Path to actor model .cfg file                                      | -         |
-| --critic-model        | Path to critic model .cfg file                                     | -         |
-| --gradient-steps      | Number of iterations per train step                                | -         |
-| --tau                 | Value used for syncing target model weights                        | 0.005     |
-| --step-noise-coef     | Coefficient multiplied by noise added to actions to step           | 0.1       |
-| --policy-delay        | Delay after which, actor weights and target models will be updated | 2         |
-| --policy-noise-coef   | Coefficient multiplied by noise added to target actions            | 0.2       |
-| --noise-clip          | Target noise clipping value                                        | 0.5       |
-| --buffer-max-size     | Maximum replay buffer size                                         | 10000     |
-| --buffer-initial-size | Replay buffer initial size                                         | -         |
-| --buffer-batch-size   | Replay buffer batch size                                           | 32        |
-| --buffer-n-steps      | Replay buffer transition step                                      | 1         |
+| flags               | help                                                               | default   | hp_type     |
+|:--------------------|:-------------------------------------------------------------------|:----------|:------------|
+| --actor-model       | Path to actor model .cfg file                                      | -         | -           |
+| --critic-model      | Path to critic model .cfg file                                     | -         | -           |
+| --gradient-steps    | Number of iterations per train step                                | -         | int         |
+| --noise-clip        | Target noise clipping value                                        | 0.5       | log_uniform |
+| --policy-delay      | Delay after which, actor weights and target models will be updated | 2         | categorical |
+| --policy-noise-coef | Coefficient multiplied by noise added to target actions            | 0.2       | log_uniform |
+| --step-noise-coef   | Coefficient multiplied by noise added to actions to step           | 0.1       | log_uniform |
+| --tau               | Value used for syncing target model weights                        | 0.005     | log_uniform |
 
 **Command line**
 
@@ -564,34 +805,31 @@ or
     )
     agent.fit(target_reward=100)
 
-**Note:** TD3 accepts only 2 models as input but accepts 3 for checkpoints or weights, 
-because the second critic network will be cloned at runtime.
-
-### *TRPO*
+### *6.7. TRPO*
 
 * *Number of models:* 2
 * *Action spaces:* discrete, continuous
 
-| flags                   | help                                                           | default   |
-|:------------------------|:---------------------------------------------------------------|:----------|
-| --entropy-coef          | Entropy coefficient for loss calculation                       | 0         |
-| --value-loss-coef       | Value loss coefficient for value loss calculation              | 0.5       |
-| --grad-norm             | Gradient clipping value passed to tf.clip_by_value()           | 0.5       |
-| --n-steps               | Transition steps                                               | 512       |
-| --lam                   | GAE-Lambda for advantage estimation                            | 1.0       |
-| --ppo-epochs            | Gradient updates per training step                             | 4         |
-| --mini-batches          | Number of mini-batches to use per update                       | 4         |
-| --advantage-epsilon     | Value added to estimated advantage                             | 1e-08     |
-| --clip-norm             | Clipping value passed to tf.clip_by_value()                    | 0.1       |
-| --actor-model           | Path to actor model .cfg file                                  | -         |
-| --critic-model          | Path to critic model .cfg file                                 | -         |
-| --max-kl                | Maximum KL divergence used for calculating Lagrange multiplier | 0.001     |
-| --cg-iterations         | Gradient conjugation iterations per train step                 | 10        |
-| --cg-residual-tolerance | Gradient conjugation residual tolerance parameter              | 1e-10     |
-| --cg-damping            | Gradient conjugation damping parameter                         | 0.001     |
-| --actor-iterations      | Actor optimization iterations per train step                   | 10        |
-| --critic-iterations     | Critic optimization iterations per train step                  | 3         |
-| --fvp-n-steps           | Value used to skip every n-frames used to calculate FVP        | 5         |
+| flags                   | help                                                           | default   | hp_type     |
+|:------------------------|:---------------------------------------------------------------|:----------|:------------|
+| --actor-iterations      | Actor optimization iterations per train step                   | 10        | int         |
+| --actor-model           | Path to actor model .cfg file                                  | -         | -           |
+| --advantage-epsilon     | Value added to estimated advantage                             | 1e-08     | log_uniform |
+| --cg-damping            | Gradient conjugation damping parameter                         | 0.001     | log_uniform |
+| --cg-iterations         | Gradient conjugation iterations per train step                 | 10        | -           |
+| --cg-residual-tolerance | Gradient conjugation residual tolerance parameter              | 1e-10     | log_uniform |
+| --clip-norm             | Clipping value passed to tf.clip_by_value()                    | 0.1       | log_uniform |
+| --critic-iterations     | Critic optimization iterations per train step                  | 3         | int         |
+| --critic-model          | Path to critic model .cfg file                                 | -         | -           |
+| --entropy-coef          | Entropy coefficient for loss calculation                       | 0         | log_uniform |
+| --fvp-n-steps           | Value used to skip every n-frames used to calculate FVP        | 5         | int         |
+| --grad-norm             | Gradient clipping value passed to tf.clip_by_value()           | 0.5       | log_uniform |
+| --lam                   | GAE-Lambda for advantage estimation                            | 1.0       | log_uniform |
+| --max-kl                | Maximum KL divergence used for calculating Lagrange multiplier | 0.001     | log_uniform |
+| --mini-batches          | Number of mini-batches to use per update                       | 4         | categorical |
+| --n-steps               | Transition steps                                               | 512       | categorical |
+| --ppo-epochs            | Gradient updates per training step                             | 4         | categorical |
+| --value-loss-coef       | Value loss coefficient for value loss calculation              | 0.5       | log_uniform |
 
 **Command line**
 
@@ -636,17 +874,17 @@ or
     )
     agent.fit(target_reward=100)
 
-## **License**
+## **7. License**
 ___
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
-## **Show your support**
+## **8. Show your support**
 ___
 
 Give a ⭐️ if this project helped you!
 
-## **Contact**
+## **9. Contact**
 ___
 
 Emad Boctor - emad_1989@hotmail.com

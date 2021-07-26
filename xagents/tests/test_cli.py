@@ -67,7 +67,7 @@ class TestExecutor:
             _action: If True, True will be stored.
             _type: Argument type.
             _nargs: Argument number of expected values.
-            hp_type: Hyper parameter type.
+            hp_type: hyperparameter type.
             test_args: argv that is being created.
             values: A dictionary of flags - expected values
             flag: Flag to which a value is generated.

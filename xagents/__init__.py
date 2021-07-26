@@ -35,6 +35,6 @@ commands = {
     'tune': (
         tune_args,
         '',
-        'Tune hyper parameters given an agent, hyper parameter specs, and environment',
+        'Tune hyperparameters given an agent, hyperparameter specs, and environment',
     ),
 }

@@ -66,8 +66,6 @@ class ReplayBuffer1(BaseBuffer):
         Initialize replay buffer.
         Args:
             size: Buffer maximum size.
-            n_steps: Steps separating start and end states.
-            gamma: Discount factor.
             **kwargs: kwargs passed to BaseBuffer.
         """
         super(ReplayBuffer1, self).__init__(size, **kwargs)
