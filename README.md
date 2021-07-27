@@ -9,19 +9,20 @@
 * [Installation](#1-installation)
 * [Description](#2-description)
 * [Features](#3-features)
-  * [Tensorflow 2](#tensorflow-2x)
-  * [wandb support](#wandb-support)
-  * [Multiple environments (All agents)](#multiple-environments)
-  * [Multiple memory-optimized replay buffers](#multiple-memory-optimized-replay-buffers)
-  * [Command line options](#command-line-options)
-  * [Intuitive hyperparameter tuning from cli](#intuitive-hyperparameter-tuning-from-cli)
-  * [Early stopping / reduce on plateau](#early-stopping--reduce-on-plateau)
-  * [Discrete and continuous action spaces](#discrete-and-continuous-action-spaces)
-  * [Unit tests](#unit-tests)
-  * [Models are loaded from .cfg files](#models-are-loaded-from-cfg-files)
-  * [Training history checkpoints](#training-history-checkpoints)
-  * [Reproducible results](#reproducible-results)
-  * [Gameplay output to .jpg frames or .mp4 vid](#gameplay-output-to-jpg-frames-or-mp4-vid)
+  * [Tensorflow 2](#31-tensorflow-2x)
+  * [wandb support](#32-wandb-support)
+  * [Multiple environments (All agents)](#33-multiple-environments)
+  * [Multiple memory-optimized replay buffers](#34-multiple-memory-optimized-replay-buffers)
+  * [Command line options](#35-command-line-options)
+  * [Intuitive hyperparameter tuning from cli](#36-intuitive-hyperparameter-tuning-from-cli)
+  * [Early stopping / reduce on plateau](#37-early-stopping--reduce-on-plateau)
+  * [Discrete and continuous action spaces](#38-discrete-and-continuous-action-spaces)
+  * [Unit tests](#39-unit-tests)
+  * [Models are loaded from .cfg files](#310-models-are-loaded-from-cfg-files)
+  * [Training history checkpoints](#311-training-history-checkpoints)
+  * [Reproducible results](#312-reproducible-results)
+  * [Gameplay output to .jpg frames or .mp4 vid](#313-gameplay-output-to-jpg-frames-or-mp4-vid)
+  * [Resumable training and history](#314-resume-training--history)
 * [Usage](#4-usage)
   * [Training](#41-training)
   * [Playing](#42-playing)
@@ -65,11 +66,11 @@ to install [ROMS](http://www.atarimania.com/rom_collection_archive_atari_2600_ro
   
 * To be able to run the tests, [pytest-xvfb](https://pypi.org/project/pytest-xvfb/) plugin will
 be automatically installed but will require an additional step ...
-  * For macOS users:
+  * **For macOS users**:
     ```shell 
     brew install xquartz
     ```
-  * For linux users:
+  * For **linux users**:
     ```shell
     sudo apt-get install -y xvfb
     ```
@@ -98,48 +99,53 @@ xagents
 <!-- DESCRIPTION -->
 ## **2. Description**
 ___
-xagents is a tensorflow based mini-library which facilitates experimentation with
+**xagents** is a tensorflow based mini-library which facilitates experimentation with
 existing reinforcement learning algorithms, as well as the implementation of new ones. It
 provides well tested components that can be easily modified or extended. The available
 selection of algorithms can be used directly or through command line.
 
 <!-- FEATURES -->
 ## **3. Features**
-
-### **Tensorflow 2.x**
+___
+### **3.1. Tensorflow 2.x**
 
 * All available agents are based on tensorflow 2.x.
 * High performance training loops executed in graph mode.
 * Keras models.
 
-### **wandb support**
+### **3.2. wandb support**
 
 Visualization of the training is supported, as well as many other awesome features provided by [wandb](https://wandb.ai/site).
 
 ![wandb-agents](/img/wandb-agents.png)
 
-### **Multiple environments**
+### **3.3. Multiple environments**
 
 All agents support multiple environments, which operations are conducted
 in tensorflow graph. This boosts training speed without the overhead of creating
 a process per environment. Atari and environments that return images, 
-are wrapped in `LazyFrames` which significantly lower memory usage.
+are wrapped in 
+[LazyFrames](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L24) 
+ which significantly lower memory usage.
 
-### **Multiple memory-optimized replay buffers**
+### **3.4. Multiple memory-optimized replay buffers**
 
 There are 2 kinds of replay buffers available:
- * ReplayBuffer1 which is deque-based (DQN, ACER).
- * ReplayBuffer2 which is numpy-based (DDPG, TD3).
+ * [ReplayBuffer1](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/buffers.py#L59) 
+   which is deque-based (DQN, ACER).
+ * [ReplayBuffer2](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/buffers.py#L101) 
+   which is numpy-based (DDPG, TD3).
 
 Both support max size and initial size, and are usually
-combined with `LazyFrames` for memory optimality.
+combined with [LazyFrames](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L24) 
+for memory optimality.
 
-### **Command line options**
+### **3.5. Command line options**
 
 All features are available through the command line. For more command line info,
 check [command line options](#5-command-line-options)
 
-### **Intuitive hyperparameter tuning from cli**
+### **3.6. Intuitive hyperparameter tuning from cli**
 
 Command line tuning interface based on [optuna](https://optuna.org), which provides 
 many hyperparameter features and types. 3 types are currently used by xagents:
@@ -156,9 +162,9 @@ And in both examples if `--interesting-param` is not specified, it will have the
 or a fixed value, if only 1 value is specified. Also, some nice visualization options using 
 [optuna.visualization.matplotlib](https://optuna.readthedocs.io/en/latest/reference/visualization/matplotlib.html):
 
-![param-importances](/img/param-importances.jpg)
+![param-importances](/img/param-importances.png)
 
-### **Early stopping / reduce on plateau.**
+### **3.7. Early stopping / reduce on plateau.**
 
 Early train stopping usually when plateau is reached for a pre-specified
 n number of times without any improvement. Learning rate is
@@ -166,22 +172,149 @@ reduced by some pre-determined factor. To activate these features:
 
     --divergence-monitoring-steps <train-steps-at-which-should-monitor>
 
-### **Discrete and continuous action spaces**
+### **3.8. Discrete and continuous action spaces**
 
-|            | a2c   | acer   | ddpg   | dqn   | ppo   | td3   | trpo   |
+|            | A2C   | ACER   | DDPG   | DQN   | PPO   | TD3   | TRPO   |
 |:-----------|:------|:-------|:-------|:------|:------|:------|:-------|
-| discrete   | yes   | yes    | no     | yes   | yes   | no    | yes    |
-| continuous | yes   | no     | yes    | no    | yes   | yes   | yes    |
+| Discrete   | Yes   | Yes    | No     | Yes   | Yes   | No    | Yes    |
+| Continuous | Yes   | No     | Yes    | No    | Yes   | Yes   | Yes    |
 
-### **Unit tests**
-### **Models are loaded from .cfg files**
-### **Training history checkpoints**
-### **Reproducible results**
-### **Gameplay output to .jpg frames or .mp4 vid**
+### **3.9. Unit tests**
+
+Main components are covered using [pytest](https://docs.pytest.org/en/6.2.x/) unit tests. To be able to run the tests,
+you need to install extra dependencies mentioned [earlier](#1-installation). More
+unit tests will be added to agents in future versions.
+
+### **3.10. Models are loaded from .cfg files**
+
+To facilitate experimentation, and eliminate redundancy, all agents support
+loading models by passing either `--model <model.cfg>` or `--actor-model <actor.cfg>` and 
+`--critic-model <critic.cfg>`. If no models were passed, the default ones will be loaded.
+A typical `model.cfg` file would look like:
+
+    [convolutional-0]
+    filters=32
+    size=8
+    stride=4
+    activation=relu
+    initializer=orthogonal
+    gain=1.4142135
+    
+    [convolutional-1]
+    filters=64
+    size=4
+    stride=2
+    activation=relu
+    initializer=orthogonal
+    gain=1.4142135
+    
+    [convolutional-2]
+    filters=64
+    size=3
+    stride=1
+    activation=relu
+    initializer=orthogonal
+    gain=1.4142135
+    
+    [flatten-0]
+    
+    [dense-0]
+    units=512
+    activation=relu
+    initializer=orthogonal
+    gain=1.4142135
+    common=1
+    
+    [dense-1]
+    initializer=orthogonal
+    gain=0.01
+    output=1
+    
+    [dense-2]
+    initializer=orthogonal
+    gain=1.0
+    output=1
+
+Which should generate a keras model similar to this one with output units 6, and 1 respectively:
+
+    Model: "model"
+    __________________________________________________________________________________________________
+    Layer (type)                    Output Shape         Param #     Connected to                     
+    ==================================================================================================
+    input_1 (InputLayer)            [(None, 84, 84, 1)]  0                                            
+    __________________________________________________________________________________________________
+    conv2d (Conv2D)                 (None, 20, 20, 32)   2080        input_1[0][0]                    
+    __________________________________________________________________________________________________
+    conv2d_1 (Conv2D)               (None, 9, 9, 64)     32832       conv2d[0][0]                     
+    __________________________________________________________________________________________________
+    conv2d_2 (Conv2D)               (None, 7, 7, 64)     36928       conv2d_1[0][0]                   
+    __________________________________________________________________________________________________
+    flatten (Flatten)               (None, 3136)         0           conv2d_2[0][0]                   
+    __________________________________________________________________________________________________
+    dense (Dense)                   (None, 512)          1606144     flatten[0][0]                    
+    __________________________________________________________________________________________________
+    dense_1 (Dense)                 (None, 6)            3078        dense[0][0]                      
+    __________________________________________________________________________________________________
+    dense_2 (Dense)                 (None, 1)            513         dense[0][0]                      
+    ==================================================================================================
+    Total params: 1,681,575
+    Trainable params: 1,681,575
+    Non-trainable params: 0
+    __________________________________________________________________________________________________
+
+**Notes**
+
+* You don't have to worry about this if you're going to use the default models,
+  which are loaded automatically.
+* `common=1` marks a layer to be reused by the following layers, which means
+`dense-1` and `dense-2` are called on the output of `dense-0`.
+* Initializer can be `orthogonal` or `glorot_uniform`, and to add more, 
+you'll have to modify [xagents.utils.common.ModelReader.initializers](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L169).
+* `output=1` marks a layer as output which will be appended to the outputs 
+of the resulting [tf.keras.Model](https://www.tensorflow.org/api_docs/python/tf/keras/Model)
+* Dense layers without units (output layers) will expect their respective units to be passed
+to [xagents.utils.common.ModelReader](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L151).
+
+### **3.11. Training history checkpoints**
+
+Saving training history is available for further benchmarking / visualizing results.
+This is achieved by specifying `--history-checkpoint <history.parquet>` which will result
+in a `.parquet` that will be updated at each episode end. A sample data point will have these 
+columns:
+
+* `mean_reward` most recent mean of agent episode rewards.
+* `best_reward` most recent best of agent episode rewards.
+* `episode_reward` most recent episode reward.
+* `step` most recent agent step.
+* `time` training elapsed time.
+
+Which enables producing plots similar to the ones below,
+using [xagents.utils.common.plot_history](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L346)
+
+![step-benchmark](/img/step-benchmark.jpg)
+![time-benchmark](/img/time-benchmark.jpg)
+
+### **3.12. Reproducible results**
+
+All operation results are reproducible by passing `--seed <some-seed>` or `seed=some_seed` 
+to agent constructor.
+
+### **3.13. Gameplay output to .jpg frames or .mp4 vid**
+
+Gameplay visual output can be saved to vid, by passing `--video-dir <some-dir>`
+or to `.jpg` frames by passing `--frame-dir <some-dir>` to `play` command.
+
+### **3.14. Resume training / history**
+
+Weights are saved to `.tf` by specifying `--checkpoints <ckpt1.tf> <ckpt2.tf>`. To resume training,
+`--weights <ckpt1.tf> <ckpt2.tf>` should load the weights saved earlier. If `--history-checkpoint <ckpt.parquet>`
+is specified, the file is looked for and if found, further training history will be saved
+to the same history `ckpt.parquet` and the agent metrics will be updated with the most
+recent ones contained in the history file.
 
 ## **4. Usage**
-
-All agents/commands are available through the command line.
+___
+All agents / commands are available through the command line.
 
     xagents <command> <agent> [options] [args]
 
@@ -240,21 +373,19 @@ Then either `max_steps` or `target_reward` should be specified to start training
     agent = A2C(envs, model)
     agent.play(render=True)
 
-If you need to save the game ...
-
-**For video**
+**Save video**
 
     agent.play(video_dir='/path/to/video-dir/')
 
-or
+**or**
 
     xagents play a2c --video-dir /path/to/video-dir/  
 
-**For frames**
+**Save frames**
 
     agent.play(frame_dir='/path/to/frame-dir/')
 
-or 
+**or** 
 
     xagents play a2c --frame-dir /path/to/frame-dir/
 
@@ -277,13 +408,10 @@ and all arguments can be combined `--video-dir <vid-dir> --frame-dir <frame-dir>
   any number of values, otherwise min and max.
 * For more info about how the optimization algorithms work under the hood, you may want to 
 check optuna [docs](https://optuna.readthedocs.io/en/stable/).
-* Tuning from later stages of the training is available by passing.
+* Tuning from later stages of the training is available by passing `--weights <weights1.tf> <weights2.tf>`
+  which loads agent respective model weights, and tuning starts from there.
 * Only the hyperparameters selected are tuned, the rest will keep the default values
 and will not be tuned or can have a single fixed value `--flag <val>`
-  
-      --weights /path/to/respective/agent/trained-weights.tf
-
-  which will load the trained weights and starts optimizing from there.
 * Also, due to tensorflow issue mentioned above, tensorflow logging is silenced
 using `TF_CPP_MIN_LOG_LEVEL` environment variable to prevent each trial process 
 from displaying the same import log messages over and over.
@@ -383,7 +511,7 @@ from displaying the same import log messages over and over.
 
 <!-- COMMAND LINE OPTIONS -->
 ## **5. Command line options**
-
+___
 **Note:** Not all the flags listed below are available at once, and to know which 
 ones are, respective to the command you passed, you can use:
 
@@ -397,7 +525,7 @@ which should list command + agent options combined
 
 **Flags (Available for all agents)**
 
-###**5.1. Agent**
+### **5.1. Agent**
 
   | flags                         | help                                                                         | default   | hp_type     |
   |:------------------------------|:-----------------------------------------------------------------------------|:----------|:------------|
@@ -416,7 +544,7 @@ which should list command + agent options combined
   |                               | mean reward value to be displayed.                                           |           |             |
   | --seed                        | Random seed                                                                  | -         | -           |
 
-###**5.2. General**
+### **5.2. General**
 
   | flags         | help                                                              | default   | hp_type     |
   |:--------------|:------------------------------------------------------------------|:----------|:------------|
@@ -431,9 +559,7 @@ which should list command + agent options combined
   |               | and preprocessed accordingly                                      |           |             |
   | --weights     | Path(s) to model(s) weight(s) to be loaded by agent output_models | -         | -           |
 
-###**5.3. Training**
-
-**On policy**
+### **5.3. Training**
 
   | flags             | help                                                                   |
   |:------------------|:-----------------------------------------------------------------------|
@@ -441,7 +567,7 @@ which should list command + agent options combined
   | --monitor-session | Wandb session name                                                     |
   | --target-reward   | Target reward when reached, training is stopped                        |
 
-###**5.4. Playing**
+### **5.4. Playing**
 
   | flags             | help                                                     | default   |
   |:------------------|:---------------------------------------------------------|:----------|
@@ -452,7 +578,7 @@ which should list command + agent options combined
   | --render          | If specified, the gameplay will be rendered              | -         |
   | --video-dir       | Path to directory to save the resulting gameplay video   | -         |
 
-###**5.5. Tuning**
+### **5.5. Tuning**
 
   | flags           | help                                                            | default   |
   |:----------------|:----------------------------------------------------------------|:----------|
@@ -466,7 +592,7 @@ which should list command + agent options combined
   | --trial-steps   | Maximum steps for a trial                                       | 500000    |
   | --warmup-trials | warmup trials before pruning starts                             | 5         |
 
-###**5.6. Off-policy (available to off-policy agents only)**
+### **5.6. Off-policy (available to off-policy agents only)**
 
   | flags                 | help                       | default   | hp_type     |
   |:----------------------|:---------------------------|:----------|:------------|
@@ -476,7 +602,7 @@ which should list command + agent options combined
 
 <!-- ALGORITHMS -->
 ## **6. Algorithms**
-
+___
 **General notes**
 
 * All the default hyperparameters don't work for all environments.

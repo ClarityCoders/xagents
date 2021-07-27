@@ -50,6 +50,6 @@ def assert_flags_displayed(cap, title, cli_args):
     for flag in cli_args:
         assert f'--{flag}' in cap
         for key in cli_args[flag]:
-            if key in ['help', 'required', 'default']:
+            if key in ['help', 'hp_type', 'default']:
                 for line in str(cli_args[flag][key]).split('\n'):
                     assert line in cap
