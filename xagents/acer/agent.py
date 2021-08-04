@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from gym.spaces import Discrete
 
 from xagents import A2C
 from xagents.utils.common import LazyFrames
@@ -35,6 +36,7 @@ class ACER(A2C):
             trust_region: If False, no trust region updates will be used.
             **kwargs: kwargs Passed to super classes.
         """
+        self.assert_valid_env(envs[0], Discrete)
         super(ACER, self).__init__(envs, model, **kwargs)
         self.avg_model = tf.keras.models.clone_model(self.model)
         self.ema = tf.train.ExponentialMovingAverage(ema_alpha)

@@ -108,20 +108,13 @@ def run_trial(
     if not command_known_args.non_silent:
         tf.get_logger().setLevel('ERROR')
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-        optuna.logging.set_verbosity(optuna.logging.ERROR)
         agent_known_args.quiet = True
-    pruner = optuna.pruners.MedianPruner(command_known_args.warmup_trials)
-    study = optuna.create_study(
-        study_name=command_known_args.study,
-        storage=command_known_args.storage,
-        load_if_exists=True,
-        direction='maximize',
-        pruner=pruner,
+    study = optuna.load_study(
+        command_known_args.study, storage=command_known_args.storage
     )
     objective = Objective(
         agent_id, agent_known_args, non_agent_known_args, command_known_args
     )
-    optuna.logging.set_verbosity(optuna.logging.INFO)
     study.optimize(objective, n_trials=1)
 
 
@@ -144,6 +137,14 @@ def run_tuning(agent_id, agent_known_args, non_agent_known_args, command_known_a
         'non_agent_known_args': non_agent_known_args,
         'command_known_args': command_known_args,
     }
+    pruner = optuna.pruners.MedianPruner(command_known_args.warmup_trials)
+    optuna.create_study(
+        study_name=command_known_args.study,
+        storage=command_known_args.storage,
+        load_if_exists=True,
+        direction='maximize',
+        pruner=pruner,
+    )
     for _ in range(command_known_args.n_trials // command_known_args.n_jobs):
         with ProcessPoolExecutor(command_known_args.n_jobs) as executor:
             future_trials = [

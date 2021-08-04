@@ -1,4 +1,5 @@
 import tensorflow as tf
+from gym.spaces import Box
 from tensorflow.keras.losses import MSE
 
 from xagents.base import OffPolicy
@@ -31,6 +32,7 @@ class DDPG(OffPolicy):
             policy_noise_coef: Coefficient multiplied by noise added to target actions.
             **kwargs: kwargs passed to super classes.
         """
+        self.assert_valid_env(envs[0], Box)
         super(DDPG, self).__init__(envs, actor_model, buffers, **kwargs)
         self.actor = actor_model
         self.critic = critic_model

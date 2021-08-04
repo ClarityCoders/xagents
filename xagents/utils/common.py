@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from gym.spaces import Discrete
+from gym.spaces import Box, Discrete
 from matplotlib import pyplot as plt
 from tensorflow.keras.initializers import GlorotUniform, Orthogonal
 from tensorflow.keras.layers import Conv2D, Dense, Flatten, Input
@@ -459,6 +459,10 @@ def create_model(
         seed,
     )
     if agent_id in ['td3', 'ddpg'] and 'critic' in model_cfg:
+        assert isinstance(env.action_space, Box), (
+            f'Invalid environment: {env.spec.id}. {agent_id.upper()} supports '
+            f'environments with a Box action space only, got {env.action_space}'
+        )
         model_reader.input_shape = (
             model_reader.input_shape[0] + env.action_space.shape[0]
         )

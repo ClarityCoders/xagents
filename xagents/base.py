@@ -123,6 +123,12 @@ class BaseAgent(ABC):
             'best reward',
         )
 
+    def assert_valid_env(self, env, valid_type):
+        assert isinstance(env.action_space, valid_type), (
+            f'Invalid environment: {env.spec.id}. {self.__class__.__name__} supports '
+            f'environments with a {valid_type} action space only, got {env.action_space}'
+        )
+
     def display_message(self, *args, **kwargs):
         """
         Display messages to the console.
