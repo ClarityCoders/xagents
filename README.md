@@ -45,8 +45,11 @@
 * [Show your support](#8-show-your-support)
 * [Contact](#9-contact)
 
-![pong](/img/pong.gif)
 ![breakout](/img/breakout.gif)
+![pong](/img/pong.gif)
+![carnival](/img/carnival.gif)
+![pacman](/img/pacman.gif)
+![gopher](/img/gopher.gif)
 
 ![bipedal-walker](/img/bipedal-walker.gif)
 

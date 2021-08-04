@@ -598,6 +598,7 @@ class BaseAgent(ABC):
         """
         self.reset_envs()
         env_idx = 0
+        total_reward = 0
         env_in_use = self.envs[env_idx]
         if video_dir:
             env_in_use = gym.wrappers.Monitor(env_in_use, video_dir)
@@ -625,7 +626,9 @@ class BaseAgent(ABC):
                     self.get_states(), self.output_models, False
                 )[action_idx][env_idx]
             self.states[env_idx], reward, done, _ = env_in_use.step(action)
+            total_reward += reward
             if done:
+                self.display_message(f'Total reward: {total_reward}')
                 break
             steps += 1
 
