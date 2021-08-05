@@ -181,7 +181,7 @@ class TestBase:
         """
         Test if agent initializes the correct n_actions attribute.
         Args:
-            env_id: One of agent ids available in xagents.agents
+            env_ids: discrete/box environment id pair.
             agent: OnPolicy/OffPolicy subclass.
         """
         env_id = env_ids[0] if agent not in [TD3, DDPG] else env_ids[1]

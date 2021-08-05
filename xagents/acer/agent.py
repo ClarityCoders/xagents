@@ -7,6 +7,11 @@ from xagents.utils.common import LazyFrames
 
 
 class ACER(A2C):
+    """
+    Sample Efficient Actor-Critic with Experience Replay.
+    https://arxiv.org/abs/1611.01224
+    """
+
     def __init__(
         self,
         envs,

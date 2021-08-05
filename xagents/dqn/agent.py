@@ -7,6 +7,11 @@ from xagents.base import OffPolicy
 
 
 class DQN(OffPolicy):
+    """
+    Playing Atari with Deep Reinforcement Learning.
+    https://arxiv.org/abs/1312.5602
+    """
+
     def __init__(
         self,
         envs,

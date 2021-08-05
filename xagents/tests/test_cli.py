@@ -141,11 +141,9 @@ class TestExecutor:
         assert 'flag' not in cap
         self.assert_base_displayed(cap)
 
-    def test_maybe_create_agent_invalid_command(self, capsys):
+    def test_maybe_create_agent_invalid_command(self):
         """
         Ensure exception is raised for a valid command.
-        Args:
-            capsys: _pytest.capture.CaptureFixture
         """
         with pytest.raises(AssertionError, match=r'Invalid command'):
             self.executor.maybe_create_agent(['invalid'])

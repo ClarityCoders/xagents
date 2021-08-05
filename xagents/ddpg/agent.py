@@ -6,6 +6,11 @@ from xagents.base import OffPolicy
 
 
 class DDPG(OffPolicy):
+    """
+    Continuous control with deep reinforcement learning.
+    https://arxiv.org/abs/1509.02971
+    """
+
     def __init__(
         self,
         envs,

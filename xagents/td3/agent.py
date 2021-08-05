@@ -5,6 +5,11 @@ from xagents import DDPG
 
 
 class TD3(DDPG):
+    """
+    Addressing Function Approximation Error in Actor-Critic Methods.
+    https://arxiv.org/abs/1802.09477
+    """
+
     def __init__(
         self,
         envs,

@@ -22,13 +22,27 @@ from xagents.utils.buffers import ReplayBuffer1, ReplayBuffer2
 
 
 class LazyFrames:
+    """
+    Efficient atari frame wrapper.
+    """
+
     def __init__(self, frames):
+        """
+        Wrap frames.
+        Args:
+            frames: numpy array of atari frames.
+        """
         self.frames = frames
         self.out = None
         self.dtype = frames.dtype
         self.shape = frames.shape
 
     def process_frame(self):
+        """
+        Get wrapped frames as numpy array.
+        Returns:
+            frames as numpy array
+        """
         if self.out is None:
             self.out = np.array(self.frames)
             self.frames = None

@@ -5,6 +5,11 @@ from xagents import PPO
 
 
 class TRPO(PPO):
+    """
+    Trust Region Policy Optimization.
+    https://arxiv.org/abs/1502.05477
+    """
+
     def __init__(
         self,
         envs,

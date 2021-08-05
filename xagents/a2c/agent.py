@@ -8,6 +8,11 @@ from xagents.base import OnPolicy
 
 
 class A2C(OnPolicy):
+    """
+    Asynchronous Methods for Deep Reinforcement Learning
+    https://arxiv.org/abs/1602.01783
+    """
+
     def __init__(
         self,
         envs,

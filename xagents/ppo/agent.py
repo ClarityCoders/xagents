@@ -5,6 +5,11 @@ from xagents import A2C
 
 
 class PPO(A2C):
+    """
+    Proximal Policy Optimization Algorithms.
+    https://arxiv.org/abs/1707.06347
+    """
+
     def __init__(
         self,
         envs,

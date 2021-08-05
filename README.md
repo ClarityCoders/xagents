@@ -1,3 +1,9 @@
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+
 <p>
   <a href="https://github.com/schissmantics/xagents/">
   </a>
@@ -1024,3 +1030,14 @@ ___
 schissmantics@outlook.com
 
 Project link: https://github.com/schissmantics/xagents
+
+[contributors-shield]: https://img.shields.io/github/contributors/schissmantics/xagents?style=flat-square
+[contributors-url]: https://github.com/schissmantics/xagents/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/schissmantics/xagents?style=flat-square
+[forks-url]: https://github.com/schissmantics/xagents/network/members
+[stars-shield]: https://img.shields.io/github/stars/schissmantics/xagents?style=flat-square
+[stars-url]: https://github.com/schissmantics/xagents/stargazers
+[issues-shield]: https://img.shields.io/github/issues/schissmantics/xagents?style=flat-square
+[issues-url]: https://github.com/schissmantics/xagents/issues
+[license-shield]: https://img.shields.io/github/license/schissmantics/xagents
+[license-url]: https://github.com/schissmantics/xagents/blob/master/LICENSE

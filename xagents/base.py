@@ -20,6 +20,10 @@ from xagents.utils.common import write_from_dict
 
 
 class BaseAgent(ABC):
+    """
+    Base class for various types of agents.
+    """
+
     def __init__(
         self,
         envs,
@@ -40,7 +44,7 @@ class BaseAgent(ABC):
         trial=None,
     ):
         """
-        Base class for various types of agents.
+        Initialize base settings.
         Args:
             envs: A list of gym environments.
             model: tf.keras.models.Model that is expected to be compiled
@@ -124,6 +128,15 @@ class BaseAgent(ABC):
         )
 
     def assert_valid_env(self, env, valid_type):
+        """
+        Assert the right type of environment is passed to an agent.
+        Args:
+            env: gym environment.
+            valid_type: gym.spaces class.
+
+        Returns:
+            None
+        """
         assert isinstance(env.action_space, valid_type), (
             f'Invalid environment: {env.spec.id}. {self.__class__.__name__} supports '
             f'environments with a {valid_type} action space only, got {env.action_space}'
