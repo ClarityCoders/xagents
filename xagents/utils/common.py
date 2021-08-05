@@ -144,6 +144,11 @@ def create_envs(env_name, n=1, preprocess=True, *args, **kwargs):
     """
     envs = [gym.make(env_name) for _ in range(n)]
     if preprocess:
+        assert len(envs[0].observation_space.shape) == 3, (
+            f'Cannot use AtariWrapper or --preprocess for non-atari environment '
+            f'{envs[0].spec.id}, with input '
+            f'shape {envs[0].observation_space.shape}'
+        )
         envs = [AtariWrapper(env, *args, **kwargs) for env in envs]
     return envs
 

@@ -1,5 +1,5 @@
 <p>
-  <a href="https://github.com/emadboctorx/xagents/">
+  <a href="https://github.com/schissmantics/xagents/">
   </a>
 
   <h3 align="left">xagents - reusable, scalable, 
@@ -59,7 +59,7 @@
 ___
 
 ```sh
-git clone https://github.com/emadboctorx/xagents
+git clone https://github.com/schissmantics/xagents
 cd xagents
 pip install .
 ```
@@ -133,19 +133,19 @@ All agents support multiple environments, which operations are conducted
 in tensorflow graph. This boosts training speed without the overhead of creating
 a process per environment. Atari and environments that return images, 
 are wrapped in 
-[LazyFrames](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L24) 
+[LazyFrames](https://github.com/schissmantics/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L24) 
  which significantly lower memory usage.
 
 ### **3.4. Multiple memory-optimized replay buffers**
 
 There are 2 kinds of replay buffers available:
- * [ReplayBuffer1](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/buffers.py#L59) 
+ * [ReplayBuffer1](https://github.com/schissmantics/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/buffers.py#L59) 
    which is deque-based (DQN, ACER).
- * [ReplayBuffer2](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/buffers.py#L101) 
+ * [ReplayBuffer2](https://github.com/schissmantics/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/buffers.py#L101) 
    which is numpy-based (DDPG, TD3).
 
 Both support max size and initial size, and are usually
-combined with [LazyFrames](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L24) 
+combined with [LazyFrames](https://github.com/schissmantics/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L24) 
 for memory optimality.
 
 ### **3.5. Command line options**
@@ -277,11 +277,11 @@ Which should generate a keras model similar to this one with output units 6, and
 * `common=1` marks a layer to be reused by the following layers, which means
 `dense-1` and `dense-2` are called on the output of `dense-0`.
 * Initializer can be `orthogonal` or `glorot_uniform`, and to add more, 
-you'll have to modify [xagents.utils.common.ModelReader.initializers](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L169).
+you'll have to modify [xagents.utils.common.ModelReader.initializers](https://github.com/schissmantics/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L169).
 * `output=1` marks a layer as output which will be appended to the outputs 
 of the resulting [tf.keras.Model](https://www.tensorflow.org/api_docs/python/tf/keras/Model)
 * Dense layers without units (output layers) will expect their respective units to be passed
-to [xagents.utils.common.ModelReader](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L151).
+to [xagents.utils.common.ModelReader](https://github.com/schissmantics/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L151).
 
 ### **3.11. Training history checkpoints**
 
@@ -297,7 +297,7 @@ columns:
 * `time` training elapsed time.
 
 Which enables producing plots similar to the ones below,
-using [xagents.utils.common.plot_history](https://github.com/emadboctorx/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L346)
+using [xagents.utils.common.plot_history](https://github.com/schissmantics/xagents/blob/d81e446bdd37d621fb4c3c1999a35306d70047b7/xagents/utils/common.py#L346)
 
 ![step-benchmark](/img/step-benchmark.jpg)
 ![time-benchmark](/img/time-benchmark.jpg)
@@ -1021,6 +1021,6 @@ Give a ⭐️ if this project helped you!
 ## **9. Contact**
 ___
 
-Emad Boctor - emad_1989@hotmail.com
+schissmantics@outlook.com
 
-Project link: https://github.com/emadboctorx/xagents
+Project link: https://github.com/schissmantics/xagents

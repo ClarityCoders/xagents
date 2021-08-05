@@ -630,7 +630,7 @@ class BaseAgent(ABC):
             else:
                 action = self.get_model_outputs(
                     self.get_states(), self.output_models, False
-                )[action_idx][env_idx]
+                )[action_idx][env_idx].numpy()
             self.states[env_idx], reward, done, _ = env_in_use.step(action)
             total_reward += reward
             if done:
