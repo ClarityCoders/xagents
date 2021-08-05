@@ -52,6 +52,7 @@
 ![gopher](/img/gopher.gif)
 
 ![bipedal-walker](/img/bipedal-walker.gif)
+![lunar-lander](/img/lunar-lander.gif)
 
 
 ### **1. Installation**
@@ -67,13 +68,17 @@ pip install .
 * To be able to use atari environments, follow the instructions in [atari-py](https://github.com/openai/atari-py#roms)
 to install [ROMS](http://www.atarimania.com/rom_collection_archive_atari_2600_roms.html).
   
-* To be able to run the tests, [pytest-xvfb](https://pypi.org/project/pytest-xvfb/) plugin will
-be automatically installed but will require an additional step ...
-  * **For macOS users**:
+* To be able to run the tests **remotely**, you need to run:
+
+      pip install pytest-xvfb pyvirtualdisplay 
+
+**Followed by:**
+
+  * **For OSX cloud**:
     ```shell 
     brew install xquartz
     ```
-  * For **linux users**:
+  * **For linux cloud**:
     ```shell
     sudo apt-get install -y xvfb
     ```

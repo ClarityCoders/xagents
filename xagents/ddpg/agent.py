@@ -32,8 +32,8 @@ class DDPG(OffPolicy):
             policy_noise_coef: Coefficient multiplied by noise added to target actions.
             **kwargs: kwargs passed to super classes.
         """
-        self.assert_valid_env(envs[0], Box)
         super(DDPG, self).__init__(envs, actor_model, buffers, **kwargs)
+        self.assert_valid_env(envs[0], Box)
         self.actor = actor_model
         self.critic = critic_model
         self.policy_delay = 1

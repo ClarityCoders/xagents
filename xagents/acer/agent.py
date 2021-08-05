@@ -36,8 +36,8 @@ class ACER(A2C):
             trust_region: If False, no trust region updates will be used.
             **kwargs: kwargs Passed to super classes.
         """
-        self.assert_valid_env(envs[0], Discrete)
         super(ACER, self).__init__(envs, model, **kwargs)
+        self.assert_valid_env(envs[0], Discrete)
         self.avg_model = tf.keras.models.clone_model(self.model)
         self.ema = tf.train.ExponentialMovingAverage(ema_alpha)
         self.buffers = buffers

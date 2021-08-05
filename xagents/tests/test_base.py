@@ -104,7 +104,8 @@ class TestBase:
         Returns:
             agent_kwargs.
         """
-        agent_kwargs = {'envs': envs if envs is not None else self.envs}
+        valid_envs = self.envs if agent not in [TD3, DDPG] else self.envs2
+        agent_kwargs = {'envs': envs if envs is not None else valid_envs}
         buffers = buffers or self.buffers
         if self.model_counts[agent] > 1:
             agent_kwargs['actor_model'] = model or tf.keras.models.clone_model(
@@ -159,30 +160,31 @@ class TestBase:
             results.add(random.randint(0, test_range))
             results.add(int(np.random.randint(0, test_range, 1)))
             results.add(int(tf.random.uniform([1], maxval=test_range)))
-            results.add(self.envs[0].action_space.sample())
+            sample = agent.envs[0].action_space.sample()
+            if isinstance(sample, np.ndarray):
+                sample = tuple(sample)
+            results.add(sample)
         assert results1 == results2
 
     @pytest.mark.parametrize(
-        'env_id',
+        'env_ids',
         [
-            'RiverraidNoFrameskip-v4',
-            'Robotank-ramDeterministic-v0',
-            'BeamRiderDeterministic-v4',
-            'PongNoFrameskip-v4',
-            'GravitarNoFrameskip-v0',
-            'Freeway-ramDeterministic-v0',
-            'Bowling-ram-v0',
-            'CentipedeDeterministic-v0',
-            'Gopher-v4',
+            ('RiverraidNoFrameskip-v4', 'MountainCarContinuous-v0'),
+            ('Robotank-ramDeterministic-v0', 'Pendulum-v0'),
+            ('BeamRiderDeterministic-v4', 'LunarLanderContinuous-v2'),
+            ('PongNoFrameskip-v4', 'BipedalWalker-v3'),
+            ('GravitarNoFrameskip-v0', 'BipedalWalkerHardcore-v3'),
+            ('Freeway-ramDeterministic-v0', 'CarRacing-v0'),
         ],
     )
-    def test_n_actions(self, env_id, agent):
+    def test_n_actions(self, env_ids, agent):
         """
         Test if agent initializes the correct n_actions attribute.
         Args:
             env_id: One of agent ids available in xagents.agents
             agent: OnPolicy/OffPolicy subclass.
         """
+        env_id = env_ids[0] if agent not in [TD3, DDPG] else env_ids[1]
         env = gym.make(env_id)
         agent = agent(
             **self.get_agent_kwargs(agent, [env for _ in range(len(self.envs))])
@@ -190,7 +192,7 @@ class TestBase:
         if isinstance(env.action_space, Discrete):
             assert agent.n_actions == env.action_space.n
         else:
-            assert agent.n_actions == env.action_space.shape
+            assert agent.n_actions == env.action_space.shape[0]
 
     def test_unsupported_env(self, agent):
         """
@@ -593,14 +595,15 @@ class TestBase:
         """
         for buffer in self.buffers:
             buffer.main_buffer.clear()
+            buffer.current_size = 0
         agent = agent(**self.get_agent_kwargs(agent))
-        actions = np.random.randint(0, agent.n_actions, len(self.envs))
+        actions = [env.action_space.sample() for env in agent.envs]
         observations = agent.step_envs(actions, get_observation, store_in_buffers)
         if hasattr(agent, 'buffers'):
             if store_in_buffers:
-                assert all([len(buffer.main_buffer) > 0 for buffer in agent.buffers])
+                assert all([buffer.current_size > 0 for buffer in agent.buffers])
             else:
-                assert all([len(buffer.main_buffer) == 0 for buffer in agent.buffers])
+                assert all([buffer.current_size == 0 for buffer in agent.buffers])
         if get_observation:
             assert observations
             assert len(set([item.shape for item in observations[0]])) == 1

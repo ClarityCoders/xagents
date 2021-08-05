@@ -13,6 +13,8 @@ from xagents.utils.buffers import ReplayBuffer1, ReplayBuffer2
 from xagents.utils.cli import (agent_args, non_agent_args, play_args,
                                train_args, tune_args)
 
+optuna.logging.set_verbosity(optuna.logging.ERROR)
+
 
 @pytest.fixture(scope='function')
 def executor(request):

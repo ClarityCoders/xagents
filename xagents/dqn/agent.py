@@ -36,8 +36,8 @@ class DQN(OffPolicy):
             target_sync_steps: Steps to sync target models after each.
             **kwargs: kwargs passed to super classes.
         """
-        self.assert_valid_env(envs[0], Discrete)
         super(DQN, self).__init__(envs, model, buffers, **kwargs)
+        self.assert_valid_env(envs[0], Discrete)
         self.target_model = tf.keras.models.clone_model(self.model)
         self.target_model.set_weights(self.model.get_weights())
         self.double = double
