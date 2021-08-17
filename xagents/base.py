@@ -102,6 +102,7 @@ class BaseAgent(ABC):
         self.n_actions = None
         self.best_reward = -float('inf')
         self.mean_reward = -float('inf')
+        self.mean_tile = -float('inf')
         self.states = [np.array(0)] * self.n_envs
         self.dones = [False] * self.n_envs
         self.steps = 0
@@ -111,6 +112,7 @@ class BaseAgent(ABC):
         self.last_reset_time = None
         self.games = 0
         self.episode_rewards = np.zeros(self.n_envs)
+        self.episode_max_tiles = np.zeros(self.n_envs)
         self.done_envs = 0
         self.supported_action_spaces = Box, Discrete
         if seed:
@@ -221,7 +223,7 @@ class BaseAgent(ABC):
             self.plateau_count = 0
             self.early_stop_count = 0
             self.display_message(
-                f'Best reward updated: {self.best_reward} -> {self.mean_reward}'
+                f'Best reward updated: {self.best_reward} -> {self.mean_reward}\nAverage Tile: {self.mean_tile}'
             )
             if self.checkpoints:
                 for model, checkpoint in zip(self.output_models, self.checkpoints):
@@ -289,6 +291,9 @@ class BaseAgent(ABC):
         self.last_reset_step = self.steps
         self.mean_reward = np.around(
             np.mean(self.total_rewards), self.display_precision
+        )
+        self.mean_tile = np.around(
+            np.mean(self.episode_max_tiles), self.display_precision
         )
 
     def report_rewards(self):
@@ -404,7 +409,9 @@ class BaseAgent(ABC):
             *items,
         ) in zip(enumerate(self.envs), actions):
             state = self.states[i]
-            new_state, reward, done, _ = env.step(action)
+            #Clarity lets get out max_tile from info.
+            new_state, reward, done, info = env.step(action)
+            self.episode_max_tiles[i] = info['max_tile']
             self.states[i] = new_state
             self.dones[i] = done
             self.episode_rewards[i] += reward
